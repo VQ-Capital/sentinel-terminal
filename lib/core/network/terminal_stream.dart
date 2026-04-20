@@ -35,3 +35,19 @@ final liveTradesProvider = StreamProvider<AggTrade>((ref) async* {
     if (bundle.hasTrade()) yield bundle.trade;
   }
 });
+
+// Tüm raporları biriktiren Notifier
+class ReportNotifier extends FamilyNotifier<List<ExecutionReport>, String> {
+  @override
+  List<ExecutionReport> build(String arg) => [];
+
+  void addReport(ExecutionReport report) {
+    // Listeye en başa ekle (Stack mantığı)
+    state = [report, ...state];
+  }
+}
+
+// Kolay erişim için provider
+final reportListProvider = NotifierProviderFamily<ReportNotifier, List<ExecutionReport>, String>(
+  () => ReportNotifier(),
+);
