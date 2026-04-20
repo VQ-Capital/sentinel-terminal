@@ -1,11 +1,10 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-// Ürettiğin proto dosyalarını import et (İsimleri kontrol et, pb.dart ile biter)
-import 'generated/sentinel/execution/v1/execution.pb.dart'; 
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // flutter_riverpod olmalı
+import 'core/network/terminal_stream.dart';
 
 void main() {
-  runApp(const VQTerminalApp());
+  // ProviderScope eklemeyi unutma, riverpod için zorunlu
+  runApp(const ProviderScope(child: VQTerminalApp()));
 }
 
 class VQTerminalApp extends StatelessWidget {
@@ -15,69 +14,71 @@ class VQTerminalApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(), // HFT Terminal her zaman Dark olur
-      home: const TerminalScreen(),
+      theme: ThemeData.dark(useMaterial3: true),
+      home: const DashboardScreen(),
     );
   }
 }
 
-class TerminalScreen extends StatefulWidget {
-  const TerminalScreen({super.key});
+class DashboardScreen extends ConsumerWidget {
+  const DashboardScreen({super.key});
 
   @override
-  State<TerminalScreen> createState() => _TerminalScreenState();
-}
-
-class _TerminalScreenState extends State<TerminalScreen> {
-  // API Gateway URL (Docker-compose içinde 8080 demiştik)
-  final channel = WebSocketChannel.connect(
-    Uri.parse('ws://localhost:8080/ws/v1/pipeline'),
-  );
-
-  List<ExecutionReport> reports = [];
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Canlı fiyat provider'ını dinle
+    final lastTradeAsync = ref.watch(liveTradesProvider);
+    
     return Scaffold(
-      appBar: AppBar(title: const Text('🦅 VQ-CAPITAL REAL-TIME TERMINAL')),
-      body: StreamBuilder(
-        stream: channel.stream,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            // KRİTİK: Gelen veriyi binary (Uint8List) olarak al ve Protobuf ile parse et
-            final Uint8List binaryData = snapshot.data as Uint8List;
-            try {
-              final report = ExecutionReport.fromBuffer(binaryData);
-              reports.insert(0, report); // En yeni raporu en üste ekle
-            } catch (e) {
-              // Eğer gelen veri ExecutionReport değilse (örneğin MarketTrade ise) buraya düşer
-              // Şimdilik sadece execution raporlarını yakalıyoruz
-            }
-          }
-
-          return ListView.builder(
-            itemCount: reports.length,
-            itemBuilder: (context, index) {
-              final r = reports[index];
-              return ListTile(
-                leading: Icon(
-                  r.side == "BUY" ? Icons.arrow_upward : Icons.arrow_downward,
-                  color: r.side == "BUY" ? Colors.green : Colors.red,
+      appBar: AppBar(
+        title: const Text('🦅 VQ-CAPITAL PRO TERMINAL'),
+        actions: [
+          lastTradeAsync.when(
+            data: (t) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Center(
+                child: Text(
+                  '${t.symbol}: ${t.price.toStringAsFixed(2)} USD', 
+                  style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 18),
                 ),
-                title: Text('${r.symbol} | ${r.side} | Price: ${r.executionPrice}'),
-                subtitle: Text('PnL: ${r.realizedPnl} USD | Latency: ${r.latencyMs}ms'),
-                trailing: Text('${r.quantity} Qty'),
-              );
-            },
-          );
-        },
+              ),
+            ),
+            loading: () => const SizedBox(width: 50, child: CircularProgressIndicator()),
+            error: (_, __) => const Icon(Icons.error, color: Colors.red),
+          )
+        ],
       ),
+      body: const ExecutionList(),
     );
   }
+}
+
+class ExecutionList extends ConsumerWidget {
+  const ExecutionList({super.key});
 
   @override
-  void dispose() {
-    channel.sink.close();
-    super.dispose();
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Pipeline'ı dinleyip sadece raporları göstermek için bir yapı
+    final pipelineAsync = ref.watch(vqPipelineProvider);
+    
+    return pipelineAsync.when(
+      data: (bundle) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.bolt, color: Colors.yellow, size: 64),
+              const SizedBox(height: 16),
+              const Text("BİNERİ HATTI AKTİF", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              if (bundle.hasReport())
+                Text("Son İşlem: ${bundle.report.symbol} - ${bundle.report.executionPrice}")
+              else
+                const Text("Sinyal Bekleniyor...", style: TextStyle(color: Colors.grey)),
+            ],
+          ),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text("Hata: $e")),
+    );
   }
 }
