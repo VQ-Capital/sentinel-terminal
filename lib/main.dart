@@ -193,7 +193,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildPositionCard(double posQty, double avgPrice) {
+Widget _buildPositionCard(double posQty, double avgPrice) {
     final isFlat = posQty.abs() < 0.000001;
     final isLong = posQty > 0;
     return Expanded(
@@ -213,15 +213,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                // BOL SIFIRLI GÖSTERİM (5 Basamak)
-                Text(isFlat ? "FLAT" : "${posQty > 0 ? '+' : ''}${posQty.toStringAsFixed(5)}", style: TextStyle(color: isFlat ? Colors.white54 : (isLong ? Colors.greenAccent : Colors.redAccent), fontSize: 20, fontWeight: FontWeight.w900, fontFamily: 'monospace')),
-                if (!isFlat) ...[
-                  const Spacer(),
-                  Text("@ ${avgPrice.toStringAsFixed(1)}", style: const TextStyle(color: Colors.white38, fontSize: 12, fontFamily: 'monospace')),
-                ]
-              ],
+            // HATAYI ÇÖZEN KISIM (Taşmayı Önler)
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Row(
+                children: [
+                  Text(isFlat ? "FLAT" : "${posQty > 0 ? '+' : ''}${posQty.toStringAsFixed(5)}", 
+                    style: TextStyle(color: isFlat ? Colors.white54 : (isLong ? Colors.greenAccent : Colors.redAccent), fontSize: 20, fontWeight: FontWeight.w900, fontFamily: 'monospace')
+                  ),
+                  if (!isFlat) ...[
+                    const SizedBox(width: 10),
+                    Text("@ ${avgPrice.toStringAsFixed(1)}", style: const TextStyle(color: Colors.white38, fontSize: 14, fontFamily: 'monospace')),
+                  ]
+                ],
+              ),
             ),
           ],
         ),
