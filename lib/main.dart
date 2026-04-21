@@ -13,7 +13,7 @@ class VQTerminalApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'VQ-Capital Pro Terminal',
+      title: 'Sentinel',
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF09090B),
         appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF121214), elevation: 0),
@@ -42,7 +42,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final reports = ref.watch(reportListProvider);
     final lastTradeAsync = ref.watch(liveTradesProvider);
     
-    // MİKRO-CÜZDAN AYARI (10.00 USD Başlangıç)
+    // MİKRO-CÜZDAN AYARI
     const double initialBalance = 10.00;
     double totalRealizedPnL = 0.0;
     double posQty = 0.0;
@@ -78,6 +78,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       else { unrealizedPnL = (avgPrice - currentPrice) * posQty.abs(); }
     }
 
+    // YENİ EKLENEN: SİSTEM MODU HESAPLAMA (SELF HEALING)
+    // Eğer bakiye başlangıcın %15 altındaysa Defans Modundadır.
+    final bool isDefensiveMode = ((initialBalance - currentBalance) / initialBalance) > 0.15;
+
     final isDesktop = MediaQuery.of(context).size.width > 800;
 
     return Scaffold(
@@ -91,6 +95,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
         ),
         actions: [
+          // SİSTEM DURUMU GÖSTERGESİ (HÜCUM / DEFANS)
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: isDefensiveMode ? Colors.orange.withOpacity(0.2) : Colors.green.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: isDefensiveMode ? Colors.orange : Colors.green.withOpacity(0.5))
+            ),
+            child: Row(
+              children: [
+                Icon(isDefensiveMode ? Icons.shield : Icons.sports_kabaddi, color: isDefensiveMode ? Colors.orangeAccent : Colors.greenAccent, size: 14),
+                const SizedBox(width: 6),
+                Text(isDefensiveMode ? "DEFANS MODU" : "HÜCUM MODU", style: TextStyle(color: isDefensiveMode ? Colors.orangeAccent : Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
           lastTradeAsync.when(
             data: (t) => _buildLiveTicker(t.symbol, t.price),
             loading: () => const Center(child: Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))),
@@ -148,7 +169,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
           Expanded(
             child: reports.isEmpty
-                ? const Center(child: Text("Sistem Aktif. Mikro-Lot Fırsatı Bekleniyor...", style: TextStyle(color: Colors.white24, fontSize: 16)))
+                ? const Center(child: Text("Sistem Isınıyor (Cold-Start). Vektörler Toplanıyor...", style: TextStyle(color: Colors.white24, fontSize: 16)))
                 : ListView.builder(
                     itemCount: reports.length, padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemBuilder: (context, index) => _buildTradeRow(reports[index]),
@@ -193,7 +214,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-Widget _buildPositionCard(double posQty, double avgPrice) {
+  Widget _buildPositionCard(double posQty, double avgPrice) {
     final isFlat = posQty.abs() < 0.000001;
     final isLong = posQty > 0;
     return Expanded(
@@ -213,7 +234,6 @@ Widget _buildPositionCard(double posQty, double avgPrice) {
               ],
             ),
             const SizedBox(height: 8),
-            // HATAYI ÇÖZEN KISIM (Taşmayı Önler)
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
@@ -275,7 +295,6 @@ Widget _buildPositionCard(double posQty, double avgPrice) {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(r.symbol, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                // BOL SIFIRLI MİKTAR
                 Text("$timeStr • ${r.quantity.toStringAsFixed(5)} Qty", style: const TextStyle(color: Colors.white38, fontSize: 12)),
               ],
             ),
