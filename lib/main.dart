@@ -24,15 +24,13 @@ class VQTerminalApp extends StatelessWidget {
   }
 }
 
-// CANLI FİYAT GEÇMİŞİ İÇİN STATE
 class PriceHistoryNotifier extends Notifier<List<double>> {
   @override
   List<double> build() => [];
-  
   void addPrice(double price) {
     if (state.isEmpty || state.last != price) {
       state = [...state, price];
-      if (state.length > 100) state.removeAt(0); // Son 100 anlık fiyat (Tick)
+      if (state.length > 100) state.removeAt(0);
     }
   }
 }
@@ -107,8 +105,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           children: [
             const Icon(Icons.security, color: Colors.amber, size: 22),
             const SizedBox(width: 10),
-            const Text('SENTINEL', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 18)),
-            const SizedBox(width: 16),
+            if (MediaQuery.of(context).size.width > 500) ...[
+              const Text('SENTINEL', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 18)),
+              const SizedBox(width: 16),
+            ],
             _buildSystemStatusBadge(isDefensiveMode),
           ],
         ),
@@ -120,7 +120,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           )
         ],
       ),
-      // MOBİL UYUMLULUK İÇİN TÜM SAYFAYI SCROLL İÇİNE ALIYORUZ
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isDesktop = constraints.maxWidth > 900;
@@ -156,7 +155,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       const SizedBox(height: 12),
                       SizedBox(height: 150, child: _buildChartContainer("PnL EĞRİSİ (USDT)", PnLChartPainter(pnlHistory), totalRealizedPnL >= 0 ? Colors.greenAccent : Colors.redAccent)),
                       const SizedBox(height: 12),
-                      SizedBox(height: 400, child: _buildDenseTradeLog(reports)), // Mobilde liste boyutu sabitlendi, kendi içinde kayacak
+                      SizedBox(height: 400, child: _buildDenseTradeLog(reports)),
                     ],
                   ),
               ],
@@ -175,11 +174,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       crossAxisSpacing: 10,
       mainAxisSpacing: 10,
       childAspectRatio: maxWidth > 800 ? 2.5 : 2.0,
-      physics: const NeverScrollableScrollPhysics(), // İç scroll iptal, dış scroll çalışacak
+      physics: const NeverScrollableScrollPhysics(),
       children: [
-        _buildStatCard("WALLET (USDT)", "\$${bal.toStringAsFixed(4)}", Colors.amberAccent),
-        _buildStatCard("REALIZED", "\$${rpnl.toStringAsFixed(4)}", rpnl >= 0 ? Colors.greenAccent : Colors.redAccent),
-        _buildStatCard("FLOATING", "\$${upnl.toStringAsFixed(4)}", upnl >= 0 ? Colors.greenAccent : Colors.redAccent),
+        _buildStatCard("WALLET (CÜZDAN)", "\$${bal.toStringAsFixed(4)}", Colors.amberAccent, "Net varlığınız (Sermaye + Kâr)."),
+        _buildStatCard("REALIZED (KÂR/ZARAR)", "\$${rpnl.toStringAsFixed(4)}", rpnl >= 0 ? Colors.greenAccent : Colors.redAccent, "Kapanmış işlemlerden elde edilen net sonuç."),
+        _buildStatCard("FLOATING (AÇIK İŞLEM)", "\$${upnl.toStringAsFixed(4)}", upnl >= 0 ? Colors.greenAccent : Colors.redAccent, "Şu an açık olan pozisyonun kâr/zarar durumu."),
         _buildPositionCard(pos, avgP),
         _buildKillSwitch(),
       ],
@@ -208,7 +207,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, Color color) {
+  Widget _buildStatCard(String title, String value, Color color, String subtitle) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white.withOpacity(0.05))),
@@ -217,8 +216,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(title, style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.w900, fontFamily: 'monospace'))),
+          const SizedBox(height: 2),
+          Text(subtitle, style: const TextStyle(color: Colors.white24, fontSize: 9)), // AÇIKLAMA EKLENDİ
         ],
       ),
     );
@@ -237,8 +238,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text("NET POSITION (BTC)", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-          const SizedBox(height: 4),
+          const Text("NET POSITION (POZİSYON)", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+          const SizedBox(height: 2),
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Row(
@@ -249,6 +250,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 2),
+          Text(isFlat ? "Açık pozisyonunuz yok." : (isLong ? "Yükselişe oynuyorsunuz (LONG)." : "Düşüşe oynuyorsunuz (SHORT)."), style: const TextStyle(color: Colors.white24, fontSize: 9)),
         ],
       ),
     );
@@ -264,6 +267,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           children: [
             Icon(Icons.power_settings_new, color: Colors.redAccent, size: 20), SizedBox(height: 4),
             Text("KILL SWITCH", style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.w900)),
+            SizedBox(height: 2),
+            Text("Tüm işlemleri acil durdurur.", style: TextStyle(color: Colors.white24, fontSize: 9)),
           ],
         ),
       ),
@@ -299,7 +304,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const Divider(height: 1, color: Colors.white10),
           Expanded(
             child: reports.isEmpty
-                ? const Center(child: Text("Sistem Vektör Topluyor...", style: TextStyle(color: Colors.white24, fontSize: 14)))
+                ? const Center(child: Text("Sistem Isınıyor (Cold-Start). Vektörler Toplanıyor...", style: TextStyle(color: Colors.white24, fontSize: 14)))
                 : ListView.separated(
                     itemCount: reports.length,
                     separatorBuilder: (_, __) => const Divider(height: 1, color: Colors.white10),
@@ -313,21 +318,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         child: Row(
                           children: [
-                            Text(timeStr, style: const TextStyle(color: Colors.white38, fontSize: 11, fontFamily: 'monospace')),
-                            const SizedBox(width: 8),
-                            Container(
-                              width: 36, alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(vertical: 2),
+                            Expanded(flex: 2, child: Text(timeStr, style: const TextStyle(color: Colors.white38, fontSize: 12, fontFamily: 'monospace'))),
+                            Expanded(flex: 1, child: Container(
+                              alignment: Alignment.center, padding: const EdgeInsets.symmetric(vertical: 2),
                               decoration: BoxDecoration(color: isBuy ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                              child: Text(r.side, style: TextStyle(color: isBuy ? Colors.greenAccent : Colors.redAccent, fontSize: 9, fontWeight: FontWeight.bold)),
-                            ),
+                              child: Text(r.side, style: TextStyle(color: isBuy ? Colors.greenAccent : Colors.redAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                            )),
                             const SizedBox(width: 8),
-                            Expanded(child: Text(r.symbol, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                            Expanded(child: Text(r.quantity.toStringAsFixed(5), textAlign: TextAlign.right, style: const TextStyle(fontFamily: 'monospace', fontSize: 12))),
-                            Expanded(child: Text("\$${r.executionPrice.toStringAsFixed(1)}", textAlign: TextAlign.right, style: const TextStyle(fontFamily: 'monospace', fontSize: 12))),
-                            Expanded(
-                              child: Text("${r.realizedPnl >= 0 ? '+' : ''}${r.realizedPnl.toStringAsFixed(4)}", textAlign: TextAlign.right, style: TextStyle(color: pnlColor, fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 12)),
-                            ),
+                            Expanded(flex: 2, child: Text(r.symbol, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
+                            Expanded(flex: 2, child: Text(r.quantity.toStringAsFixed(5), textAlign: TextAlign.right, style: const TextStyle(fontFamily: 'monospace', fontSize: 13))),
+                            Expanded(flex: 2, child: Text("\$${r.executionPrice.toStringAsFixed(2)}", textAlign: TextAlign.right, style: const TextStyle(fontFamily: 'monospace', fontSize: 13))),
+                            Expanded(flex: 2, child: Text("${r.realizedPnl >= 0 ? '+' : ''}${r.realizedPnl.toStringAsFixed(4)}", textAlign: TextAlign.right, style: TextStyle(color: pnlColor, fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 13))),
                           ],
                         ),
                       );
@@ -340,7 +341,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 }
 
-// YENİ: FİYAT ETIKETLİ GRAFİK ÇİZİCİ
 class PriceChartPainter extends CustomPainter {
   final List<double> history;
   PriceChartPainter(this.history);
@@ -367,11 +367,9 @@ class PriceChartPainter extends CustomPainter {
     }
     canvas.drawPath(path, paint);
 
-    // Güncel Fiyat Noktası
     final lastY = size.height - (((history.last - paddedMin) / paddedRange) * size.height);
     canvas.drawCircle(Offset(size.width, lastY), 4, Paint()..color = Colors.white);
 
-    // EKRANA MIN/MAX FİYAT ETİKETLERİ ÇİZME (Grafiğin Sağ Tarafına)
     _drawText(canvas, size, "\$${maxPrice.toStringAsFixed(1)}", Offset(0, 0), Colors.white54);
     _drawText(canvas, size, "\$${minPrice.toStringAsFixed(1)}", Offset(0, size.height - 14), Colors.white54);
   }
