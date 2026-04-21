@@ -1,10 +1,11 @@
+// ========== DOSYA: sentinel-terminal/lib/main.dart ==========
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/network/terminal_stream.dart';
 import 'generated/sentinel/execution/v1/execution.pb.dart';
 
 void main() {
-  // ProviderScope: Tüm Riverpod state'lerinin yaşam alanı
   runApp(const ProviderScope(child: VQTerminalApp()));
 }
 
@@ -17,7 +18,7 @@ class VQTerminalApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'VQ-Capital Pro Terminal',
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0A0A0A), // HFT Siyahı
+        scaffoldBackgroundColor: const Color(0xFF0A0A0A),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF121212),
           elevation: 0,
@@ -33,20 +34,25 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1. Pipeline'ı dinle ve verileri listeye aktar (Side-effect)
     ref.listen(vqPipelineProvider, (previous, next) {
       if (next.hasValue && next.value!.hasReport()) {
-        // Gelen raporu listeye ekle
         ref.read(reportListProvider("all").notifier).addReport(next.value!.report);
       }
     });
 
-    // 2. State'leri watch et (UI'ı günceller)
     final reports = ref.watch(reportListProvider("all"));
     final lastTradeAsync = ref.watch(liveTradesProvider);
 
-    // 3. Toplam PnL Hesaplama (Harf hatası düzeltildi: realizedPnl)
     final totalPnL = reports.fold<double>(0, (sum, item) => sum + item.realizedPnl);
+
+    // Kümülatif PnL Hesaplaması (Grafik İçin)
+    List<double> pnlHistory = [0.0]; // Başlangıç noktası 0
+    double currentPnL = 0.0;
+    // Raporlar ekranda en yeni en üstte (reversed) göründüğü için, grafiğe çizerken kronolojik sıraya diziyoruz
+    for (var r in reports.reversed) {
+      currentPnL += r.realizedPnl;
+      pnlHistory.add(currentPnL);
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -55,7 +61,6 @@ class DashboardScreen extends ConsumerWidget {
           style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.1, fontSize: 18),
         ),
         actions: [
-          // Sağ üst canlı fiyat göstergesi
           lastTradeAsync.when(
             data: (t) => Container(
               margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
@@ -89,13 +94,30 @@ class DashboardScreen extends ConsumerWidget {
                 const SizedBox(width: 12),
                 _buildStatCard("TRADES", "${reports.length}", Colors.blueAccent),
                 const SizedBox(width: 12),
-                _buildStatCard("SYSTEM", "LIVE", Colors.orangeAccent),
+                _buildActionCard(context), // Kill Switch Butonu Alanı
               ],
             ),
           ),
           
+          // PNL GRAFİĞİ (NATIVE CUSTOM PAINT)
+          if (pnlHistory.length > 1)
+            Container(
+              height: 120,
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF121212),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white.withOpacity(0.05)),
+              ),
+              child: CustomPaint(
+                painter: PnLChartPainter(pnlHistory),
+              ),
+            ),
+
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0),
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Divider(height: 1, color: Colors.white10),
           ),
 
@@ -118,7 +140,6 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  // İstatistik Kartı Widget'ı
   Widget _buildStatCard(String title, String value, Color color) {
     return Expanded(
       child: Container(
@@ -140,7 +161,37 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  // İşlem Satırı Widget'ı (Harf hataları realizedPnl, executionPrice, latencyMs olarak düzeltildi)
+  // Acil Durum / Kill Switch Butonu
+  Widget _buildActionCard(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          // İleride WebSocket kanalına ControlCommand basılacak
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('🚨 KILL SWITCH: Sinyal API\'ye gönderildi!'), backgroundColor: Colors.red),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.red.withOpacity(0.3)),
+          ),
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.warning_rounded, color: Colors.redAccent, size: 20),
+              SizedBox(height: 4),
+              Text("EMERGENCY STOP", style: TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTradeRow(ExecutionReport r) {
     final isBuy = r.side == "BUY";
     final pnlColor = r.realizedPnl >= 0 ? Colors.greenAccent : Colors.redAccent;
@@ -170,14 +221,8 @@ class DashboardScreen extends ConsumerWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                r.executionPrice.toStringAsFixed(2),
-                style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w500),
-              ),
-              Text(
-                "${r.latencyMs}ms",
-                style: const TextStyle(color: Colors.white24, fontSize: 10),
-              ),
+              Text(r.executionPrice.toStringAsFixed(2), style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w500)),
+              Text("${r.latencyMs}ms", style: const TextStyle(color: Colors.white24, fontSize: 10)),
             ],
           ),
           const SizedBox(width: 20),
@@ -198,4 +243,54 @@ class DashboardScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+// NATIVE KÜMÜLATİF PNL ÇİZİCİ (Zero-Dependency)
+class PnLChartPainter extends CustomPainter {
+  final List<double> history;
+  PnLChartPainter(this.history);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (history.isEmpty) return;
+
+    final paint = Paint()
+      ..color = history.last >= 0 ? Colors.greenAccent : Colors.redAccent
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
+    final minPnl = history.reduce(min);
+    final maxPnl = history.reduce(max);
+    final range = (maxPnl - minPnl) == 0 ? 1.0 : (maxPnl - minPnl);
+
+    final path = Path();
+    final dx = size.width / (history.length > 1 ? history.length - 1 : 1);
+
+    for (int i = 0; i < history.length; i++) {
+      final x = i * dx;
+      // Y değerini normalize et (Aşağısı 0, Yukarısı size.height)
+      final normalizedY = (history[i] - minPnl) / range;
+      final y = size.height - (normalizedY * size.height);
+
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(path, paint);
+
+    // Eğer min < 0 ve max > 0 ise, tam sıfır noktasına referans çizgisi çiz
+    if (minPnl < 0 && maxPnl > 0) {
+      final zeroY = size.height - ((0 - minPnl) / range) * size.height;
+      final zeroPaint = Paint()
+        ..color = Colors.white24
+        ..strokeWidth = 1.0
+        ..style = PaintingStyle.stroke;
+      canvas.drawLine(Offset(0, zeroY), Offset(size.width, zeroY), zeroPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant PnLChartPainter oldDelegate) => true;
 }
