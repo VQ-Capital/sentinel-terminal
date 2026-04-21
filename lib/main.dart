@@ -57,7 +57,7 @@ class DashboardScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          '🦅 VQ-CAPITAL PRO TERMINAL',
+          '🦅 Sentinel',
           style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.1, fontSize: 18),
         ),
         actions: [
