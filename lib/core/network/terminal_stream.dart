@@ -21,25 +21,30 @@ String getWebSocketUrl() {
   }
 }
 
-// AUTO-RECONNECT DESTEKLİ ANA VERİ AKIŞI
 final vqPipelineProvider = StreamProvider<StreamBundle>((ref) async* {
   final wsUrl = getWebSocketUrl();
   int retryCount = 0;
 
-  while (true) { // Sonsuz Döngü: Koparsa tekrar dene
+  while (true) {
     try {
       debugPrint("🔗 API Ağ Geçidine Bağlanılıyor: $wsUrl");
       final channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
       await for (final bin in channel.stream) {
-        retryCount = 0; // Başarılı veri aktığı sürece sayacı sıfırla
-        yield StreamBundle.fromBuffer(bin as List<int>);
+        retryCount = 0;
+        final bundle = StreamBundle.fromBuffer(bin as List<int>);
+        
+        // EKRAN OLUŞMADAN ÖNCE VERİYİ YAKALAMAK İÇİN DOĞRUDAN NOTIFIER'A BASIYORUZ
+        if (bundle.hasReport()) {
+          ref.read(reportListProvider.notifier).addReport(bundle.report);
+        }
+        
+        yield bundle;
       }
     } catch (e) {
       debugPrint("⚠️ WebSocket Bağlantı Hatası: $e");
     }
 
-    // Bağlantı koptuğunda sunucuyu yormamak için bekleyerek (Exponential) tekrar dene
     retryCount++;
     final delay = (retryCount * 2).clamp(2, 10);
     debugPrint("🔌 Bağlantı koptu. $delay saniye sonra yeniden denenecek...");
@@ -54,25 +59,24 @@ final liveTradesProvider = StreamProvider<AggTrade>((ref) async* {
   }
 });
 
-// ÇİFT KAYIT (DUPLICATE) ENGELLEYİCİ STATE MANAGER
-class ReportNotifier extends FamilyNotifier<List<ExecutionReport>, String> {
+class ReportNotifier extends Notifier<List<ExecutionReport>> {
   final Set<String> _seenTradeIds = {};
 
   @override
-  List<ExecutionReport> build(String arg) => [];
+  List<ExecutionReport> build() => [];
 
   void addReport(ExecutionReport report) {
-    // İşleme özel benzersiz kimlik (Sembol + Yön + Tam Milisaniye)
     final uniqueId = "${report.symbol}_${report.side}_${report.timestamp}";
     
-    // Eğer kopup tekrar bağlanma yüzünden aynı geçmiş veri gelirse, listeye bir daha ekleme
     if (!_seenTradeIds.contains(uniqueId)) {
       _seenTradeIds.add(uniqueId);
-      state = [report, ...state]; // En yeni en üste
+      // State'i anında güncelliyoruz, UI bağlı olmasa bile RAM'de tutulur
+      state = [report, ...state]; 
     }
   }
 }
 
-final reportListProvider = NotifierProviderFamily<ReportNotifier, List<ExecutionReport>, String>(
+// Family provider'ı kaldırdık, çünkü global tek bir history var
+final reportListProvider = NotifierProvider<ReportNotifier, List<ExecutionReport>>(
   () => ReportNotifier(),
 );
