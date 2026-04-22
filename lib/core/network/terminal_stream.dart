@@ -13,11 +13,11 @@ String getWebSocketUrl() {
 
   if (kIsWeb) {
     final host = Uri.base.host;
-    return 'ws://$host:8080/ws/v1/pipeline';
+    return 'ws://$host:18080/ws/v1/pipeline';
   } else if (defaultTargetPlatform == TargetPlatform.android) {
-    return 'ws://10.0.2.2:8080/ws/v1/pipeline';
+    return 'ws://10.0.2.2:18080/ws/v1/pipeline';
   } else {
-    return 'ws://127.0.0.1:8080/ws/v1/pipeline';
+    return 'ws://127.0.0.1:18080/ws/v1/pipeline';
   }
 }
 
