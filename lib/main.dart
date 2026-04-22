@@ -48,7 +48,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    ref.read(vqPipelineProvider); // NATS WebSocket Akışını Başlat
+    ref.read(vqPipelineProvider); 
   }
 
   @override
@@ -62,6 +62,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     Map<String, double> positions = {};
     Map<String, double> avgPrices = {};
     List<double> pnlHistory = [0.0];
+    
+    int closedTrades = 0;
+    int winningTrades = 0;
 
     for (var r in reports.reversed) {
       totalRealizedPnL += r.realizedPnl;
@@ -69,6 +72,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
       double posQty = positions[r.symbol] ?? 0.0;
       double avgPrice = avgPrices[r.symbol] ?? 0.0;
+
+      bool isClosing = (r.side == "SELL" && posQty > 0.0) || (r.side == "BUY" && posQty < 0.0);
+      if (isClosing) {
+          closedTrades++;
+          if (r.realizedPnl > 0) winningTrades++;
+      }
 
       if (r.side == "SELL" && posQty > 0.0) {
         double closeQty = min(r.quantity, posQty);
@@ -104,6 +113,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       }
     });
 
+    double winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0.0;
     final bool isDefensiveMode = ((initialBalance - currentBalance) / initialBalance) > 0.15;
 
     return Scaffold(
@@ -117,24 +127,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 final isDesktop = constraints.maxWidth > 900;
 
                 if (isDesktop) {
-                  // ================= DESKTOP / WEB MİMARİSİ =================
                   return Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        // ÇÖZÜM: Unbounded height hatasını çözmek için satıra sabit yükseklik veriyoruz.
                         SizedBox(
                           height: 120, 
-                          child: _buildStatsRow(currentBalance, totalRealizedPnL, totalUnrealizedPnL, activePositionsCount)
+                          child: _buildStatsRow(currentBalance, totalRealizedPnL, totalUnrealizedPnL, activePositionsCount, winRate)
                         ),
                         const SizedBox(height: 16),
                         Expanded(
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.stretch, 
                             children: [
-                              Expanded(flex: 4, child: _buildChartContainer("PORTFÖY KÜMÜLATİF PnL", PnLChartPainter(pnlHistory), totalRealizedPnL)),
+                              Expanded(flex: 3, child: _buildChartContainer("KÜMÜLATİF PnL", PnLChartPainter(pnlHistory), totalRealizedPnL)),
                               const SizedBox(width: 16),
-                              Expanded(flex: 5, child: _buildDenseTradeLog(reports, isDesktop)),
+                              Expanded(flex: 3, child: _buildOpenPositionsPanel(positions, avgPrices, marketPrices)),
+                              const SizedBox(width: 16),
+                              Expanded(flex: 4, child: _buildDenseTradeLog(reports, true)),
                             ],
                           ),
                         ),
@@ -142,15 +152,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ),
                   );
                 } else {
-                  // ================= MOBİL (ANDROID) MİMARİ =================
                   return ListView(
                     padding: const EdgeInsets.all(12.0),
                     children: [
-                      _buildStatsGrid(constraints.maxWidth, currentBalance, totalRealizedPnL, totalUnrealizedPnL, activePositionsCount),
+                      _buildStatsGrid(constraints.maxWidth, currentBalance, totalRealizedPnL, totalUnrealizedPnL, activePositionsCount, winRate),
                       const SizedBox(height: 16),
                       SizedBox(height: 280, child: _buildChartContainer("KÜMÜLATİF PnL", PnLChartPainter(pnlHistory), totalRealizedPnL)),
                       const SizedBox(height: 16),
-                      SizedBox(height: 500, child: _buildDenseTradeLog(reports, isDesktop)),
+                      SizedBox(height: 300, child: _buildOpenPositionsPanel(positions, avgPrices, marketPrices)),
+                      const SizedBox(height: 16),
+                      SizedBox(height: 500, child: _buildDenseTradeLog(reports, false)),
                     ],
                   );
                 }
@@ -216,7 +227,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildSystemStatusBadge(bool isDefensive) {
     return Tooltip(
       message: isDefensive 
-        ? "SELF-HEALING AKTİF: Kasa %15'ten fazla eridi. Risk motoru kaldıraç ve lot miktarlarını yarıya indirerek defansif moda geçti."
+        ? "SELF-HEALING AKTİF: Kasa %15'ten fazla eridi. Risk motoru defansif moda geçti."
         : "SİSTEM STABİL: HFT algoritmaları ve Sniper Modu maksimum performans ile çalışıyor.",
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -237,24 +248,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildStatsRow(double bal, double rpnl, double upnl, int posCount) {
+  Widget _buildStatsRow(double bal, double rpnl, double upnl, int posCount, double winRate) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(child: _buildStatCard("WALLET (CÜZDAN)", "\$${bal.toStringAsFixed(4)}", Colors.white, "Net Varlık", "Hesabınızdaki çekilebilir net bakiye (Sermaye + Kâr).")),
+        Expanded(child: _buildStatCard("CÜZDAN (NET)", "\$${bal.toStringAsFixed(3)}", Colors.white, "Sermaye + Kâr")),
         const SizedBox(width: 12),
-        Expanded(child: _buildStatCard("REALIZED PnL", "\$${rpnl.toStringAsFixed(4)}", rpnl >= 0 ? Colors.greenAccent : Colors.redAccent, "Kapanan K/Z", "Borsada kapanmış (Take Profit/Stop Loss) işlemlerden elde edilen net sonuç.")),
+        Expanded(child: _buildStatCard("KAPANAN PnL", "\$${rpnl.toStringAsFixed(3)}", rpnl >= 0 ? Colors.greenAccent : Colors.redAccent, "Realize Edilen")),
         const SizedBox(width: 12),
-        Expanded(child: _buildStatCard("FLOATING PnL", "\$${upnl.toStringAsFixed(4)}", upnl >= 0 ? Colors.greenAccent : Colors.redAccent, "Açık İşlemler", "Şu an canlı olan tüm pozisyonların anlık (gerçekleşmemiş) kâr/zarar durumu.")),
+        Expanded(child: _buildStatCard("AÇIK PnL", "\$${upnl.toStringAsFixed(3)}", upnl >= 0 ? Colors.greenAccent : Colors.redAccent, "Yüzen (Floating)")),
         const SizedBox(width: 12),
-        Expanded(child: _buildStatCard("AÇIK POZİSYON", "$posCount Adet", Colors.blueAccent, "Aktif Multi-Coin", "Farklı coinlerde anlık olarak taşınan eşzamanlı işlem sayısı.")),
+        Expanded(child: _buildStatCard("WIN RATE", "%${winRate.toStringAsFixed(1)}", winRate >= 50 ? Colors.blueAccent : Colors.orangeAccent, "Kazanma Oranı")),
         const SizedBox(width: 12),
         Expanded(child: _buildKillSwitch()),
       ],
     );
   }
 
-  Widget _buildStatsGrid(double width, double bal, double rpnl, double upnl, int posCount) {
+  Widget _buildStatsGrid(double width, double bal, double rpnl, double upnl, int posCount, double winRate) {
     return GridView.count(
       shrinkWrap: true,
       crossAxisCount: width > 500 ? 3 : 2, 
@@ -263,109 +274,49 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       childAspectRatio: 1.7, 
       physics: const NeverScrollableScrollPhysics(),
       children: [
-        _buildStatCard("WALLET", "\$${bal.toStringAsFixed(3)}", Colors.white, "Net Bakiye", "Sermaye + Gerçekleşen Kâr"),
-        _buildStatCard("REALIZED", "\$${rpnl.toStringAsFixed(3)}", rpnl >= 0 ? Colors.greenAccent : Colors.redAccent, "Kapanan K/Z", "Komisyonlar dahil net sonuç."),
-        _buildStatCard("FLOATING", "\$${upnl.toStringAsFixed(3)}", upnl >= 0 ? Colors.greenAccent : Colors.redAccent, "Açık İşlemler", "Anlık piyasa dalgalanması."),
-        _buildStatCard("POZİSYON", "$posCount", Colors.blueAccent, "Aktif İşlem", "Taşınan coin adedi."),
+        _buildStatCard("CÜZDAN", "\$${bal.toStringAsFixed(3)}", Colors.white, "Net Bakiye"),
+        _buildStatCard("REALIZED", "\$${rpnl.toStringAsFixed(3)}", rpnl >= 0 ? Colors.greenAccent : Colors.redAccent, "Kapanan K/Z"),
+        _buildStatCard("FLOATING", "\$${upnl.toStringAsFixed(3)}", upnl >= 0 ? Colors.greenAccent : Colors.redAccent, "Açık İşlemler"),
+        _buildStatCard("WIN RATE", "%${winRate.toStringAsFixed(1)}", winRate >= 50 ? Colors.blueAccent : Colors.orangeAccent, "Başarı Oranı"),
         _buildKillSwitch(),
       ],
     );
   }
 
-  Widget _buildStatCard(
-    String title,
-    String value,
-    Color valueColor,
-    String subtitle,
-    String tooltipMsg,
-  ) {
+  Widget _buildStatCard(String title, String value, Color valueColor, String subtitle) {
     return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
-      child: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min, // 🔥 önemli
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white54,
-                    fontSize: 9, // 🔽 küçülttük
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                      color: valueColor,
-                      fontSize: 18, // 🔽 küçülttük
-                      fontWeight: FontWeight.w900,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  maxLines: 1, // 🔥 2 → 1 yaptık
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white38,
-                    fontSize: 9, // 🔽 küçülttük
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Tooltip
-          Positioned(
-            top: 6,
-            right: 6,
-            child: Tooltip(
-              message: tooltipMsg,
-              child: const Icon(
-                Icons.info_outline,
-                size: 14,
-                color: Colors.white24,
-              ),
-            ),
-          ),
-        ],
+      decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white.withOpacity(0.05))),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(title, style: const TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+            const SizedBox(height: 4),
+            FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(color: valueColor, fontSize: 18, fontWeight: FontWeight.w900, fontFamily: 'monospace'))),
+            const SizedBox(height: 4),
+            Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white38, fontSize: 9)),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildKillSwitch() {
-    return Tooltip(
-      message: "ACİL DURUM: Tüm açık pozisyonları piyasa (Market) emriyle kapatır ve AI botu durdurur.",
-      child: InkWell(
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kill Switch Komutu İletildi!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.redAccent));
-        },
-        child: Container(
-          decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.red.withOpacity(0.5), width: 1.5)),
-          child: const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.power_settings_new, color: Colors.redAccent, size: 26), SizedBox(height: 6),
-              Text("KILL SWITCH", style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1)),
-              SizedBox(height: 2),
-              Text("Acil Durdurma", style: TextStyle(color: Colors.white38, fontSize: 10)),
-            ],
-          ),
+    return InkWell(
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kill Switch İletildi!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.redAccent));
+      },
+      child: Container(
+        decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.red.withOpacity(0.5), width: 1.5)),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.power_settings_new, color: Colors.redAccent, size: 26), SizedBox(height: 6),
+            Text("KILL SWITCH", style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          ],
         ),
       ),
     );
@@ -382,18 +333,79 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Text(title, style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
-                  const SizedBox(width: 8),
-                  const Tooltip(message: "Sistemin ilk çalıştırıldığı andan itibaren elde edilen kümülatif bakiye eğrisi.", child: Icon(Icons.info_outline, size: 14, color: Colors.white24)),
-                ],
-              ),
+              Text(title, style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
               Text("${currentPnl >= 0 ? '+' : ''}\$${currentPnl.toStringAsFixed(2)}", style: TextStyle(color: currentPnl >= 0 ? Colors.greenAccent : Colors.redAccent, fontSize: 16, fontWeight: FontWeight.w900, fontFamily: 'monospace')),
             ],
           ),
           const SizedBox(height: 20),
           Expanded(child: ClipRect(child: CustomPaint(painter: painter, size: Size.infinite))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOpenPositionsPanel(Map<String, double> positions, Map<String, double> avgPrices, Map<String, double> marketPrices) {
+    List<Widget> rows = [];
+    
+    positions.forEach((symbol, qty) {
+      if (qty.abs() > 0.000001) {
+        double currentPrice = marketPrices[symbol] ?? avgPrices[symbol] ?? 0.0;
+        double pnl = qty > 0 ? (currentPrice - avgPrices[symbol]!) * qty : (avgPrices[symbol]! - currentPrice) * qty.abs();
+        double pnlPct = (currentPrice - avgPrices[symbol]!) / avgPrices[symbol]! * 100 * (qty > 0 ? 1 : -1);
+        Color pnlColor = pnl >= 0 ? Colors.greenAccent : Colors.redAccent;
+        
+        rows.add(Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Row(
+            children: [
+              Expanded(flex: 3, child: Text(symbol.replaceAll('USDT', ''), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13))),
+              Expanded(flex: 2, child: Container(
+                alignment: Alignment.center, padding: const EdgeInsets.symmetric(vertical: 3),
+                decoration: BoxDecoration(color: qty > 0 ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                child: Text(qty > 0 ? "LONG" : "SHORT", style: TextStyle(color: qty > 0 ? Colors.greenAccent : Colors.redAccent, fontSize: 9, fontWeight: FontWeight.bold)),
+              )),
+              Expanded(flex: 4, child: Text("\$${avgPrices[symbol]!.toStringAsFixed(2)}", textAlign: TextAlign.right, style: const TextStyle(color: Colors.white54, fontFamily: 'monospace', fontSize: 12))),
+              Expanded(flex: 4, child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text("${pnl >= 0 ? '+' : ''}\$${pnl.toStringAsFixed(3)}", style: TextStyle(color: pnlColor, fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 13)),
+                  Text("${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%", style: TextStyle(color: pnlColor.withOpacity(0.8), fontSize: 10)),
+                ],
+              )),
+            ],
+          ),
+        ));
+        rows.add(const Divider(height: 1, color: Colors.white10));
+      }
+    });
+
+    return Container(
+      decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white.withOpacity(0.05))),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text("AÇIK POZİSYONLAR", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
+          ),
+          const Divider(height: 1, color: Colors.white10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: const [
+                Expanded(flex: 3, child: Text("COIN", style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
+                Expanded(flex: 2, child: Center(child: Text("YÖN", style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)))),
+                Expanded(flex: 4, child: Text("GİRİŞ F.", textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
+                Expanded(flex: 4, child: Text("K/Z (PnL)", textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Colors.white10),
+          Expanded(
+            child: rows.isEmpty 
+              ? const Center(child: Text("Aktif pozisyon bulunmuyor.", style: TextStyle(color: Colors.white38, fontSize: 12)))
+              : ListView(padding: const EdgeInsets.symmetric(horizontal: 16), children: rows)
+          ),
         ],
       ),
     );
@@ -405,18 +417,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("CANLI İŞLEM DEFTERİ", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
-                const Tooltip(
-                  message: "Borsadan gelen kesinleşmiş dolum (Execution) raporlarıdır. Gecikme ve komisyonlar düşülmüş net sonuçları gösterir.",
-                  child: Icon(Icons.info_outline, size: 16, color: Colors.white24),
-                )
-              ],
-            ),
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text("CANLI İŞLEM DEFTERİ", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
           ),
           const Divider(height: 1, color: Colors.white10),
           Padding(
@@ -427,7 +430,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 const Expanded(flex: 1, child: Center(child: Text("YÖN", style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)))),
                 const SizedBox(width: 8),
                 const Expanded(flex: 2, child: Text("COIN", style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
-                if (isDesktop) const Expanded(flex: 2, child: Text("MİKTAR", textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
                 const Expanded(flex: 2, child: Text("FİYAT", textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
                 const Expanded(flex: 2, child: Text("NET PnL", textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
               ],
@@ -462,16 +464,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               children: [
                                 Container(
                                   width: 8, height: 8,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: symbolClean == "BTC" ? Colors.orange : (symbolClean == "ETH" ? Colors.blue : (symbolClean == "SOL" ? Colors.purpleAccent : Colors.yellow)),
-                                  ),
+                                  decoration: BoxDecoration(shape: BoxShape.circle, color: symbolClean == "BTC" ? Colors.orange : (symbolClean == "ETH" ? Colors.blue : (symbolClean == "SOL" ? Colors.purpleAccent : Colors.yellow))),
                                 ),
                                 const SizedBox(width: 6),
                                 Expanded(child: FittedBox(alignment: Alignment.centerLeft, fit: BoxFit.scaleDown, child: Text(symbolClean, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)))),
                               ],
                             )),
-                            if (isDesktop) Expanded(flex: 2, child: FittedBox(alignment: Alignment.centerRight, fit: BoxFit.scaleDown, child: Text(r.quantity.toStringAsFixed(4), textAlign: TextAlign.right, style: const TextStyle(fontFamily: 'monospace', fontSize: 13, color: Colors.white70)))),
                             Expanded(flex: 2, child: FittedBox(alignment: Alignment.centerRight, fit: BoxFit.scaleDown, child: Text("\$${r.executionPrice.toStringAsFixed(1)}", textAlign: TextAlign.right, style: const TextStyle(fontFamily: 'monospace', fontSize: 13, color: Colors.white70)))),
                             Expanded(flex: 2, child: FittedBox(alignment: Alignment.centerRight, fit: BoxFit.scaleDown, child: Text("${r.realizedPnl >= 0 ? '+' : ''}${r.realizedPnl.toStringAsFixed(3)}", textAlign: TextAlign.right, style: TextStyle(color: pnlColor, fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 13)))),
                           ],
@@ -493,15 +491,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         children: [
           const CircularProgressIndicator(strokeWidth: 2, color: Colors.blueAccent),
           const SizedBox(height: 24),
-          const Text("Sistem Isınıyor (Cold-Start)", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+          const Text("Sistem Isınıyor (Blindspot Bekleniyor)", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text("Piyasadan vektörler toplanıyor...", style: TextStyle(color: Colors.white54, fontSize: 12)),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: Colors.amber.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.amber.withOpacity(0.5))),
-            child: const Text("SNIPER MODE: %98.5 Eşik Bekleniyor", style: TextStyle(color: Colors.amberAccent, fontSize: 10, fontWeight: FontWeight.bold)),
-          )
+          const Text("Piyasadan geçmiş vektörler toplanıyor...", style: TextStyle(color: Colors.white54, fontSize: 12)),
         ],
       ),
     );
