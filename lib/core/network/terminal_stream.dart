@@ -34,9 +34,11 @@ final vqPipelineProvider = StreamProvider<StreamBundle>((ref) async* {
         retryCount = 0;
         final bundle = StreamBundle.fromBuffer(bin as List<int>);
         
-        // EKRAN OLUŞMADAN ÖNCE VERİYİ YAKALAMAK İÇİN DOĞRUDAN NOTIFIER'A BASIYORUZ
         if (bundle.hasReport()) {
           ref.read(reportListProvider.notifier).addReport(bundle.report);
+        }
+        if (bundle.hasTrade()) {
+          ref.read(marketDataNotifierProvider.notifier).updatePrice(bundle.trade.symbol, bundle.trade.price);
         }
         
         yield bundle;
@@ -52,12 +54,20 @@ final vqPipelineProvider = StreamProvider<StreamBundle>((ref) async* {
   }
 });
 
-final liveTradesProvider = StreamProvider<AggTrade>((ref) async* {
-  final pipeline = ref.watch(vqPipelineProvider.stream);
-  await for (final bundle in pipeline) {
-    if (bundle.hasTrade()) yield bundle.trade;
+// YENİ: MULTI-COIN FİYAT YÖNETİCİSİ
+class MarketDataNotifier extends Notifier<Map<String, double>> {
+  @override
+  Map<String, double> build() => {};
+
+  void updatePrice(String symbol, double price) {
+    // Performansı korumak için referansı kopyalayarak atama yapıyoruz
+    final newState = Map<String, double>.from(state);
+    newState[symbol] = price;
+    state = newState;
   }
-});
+}
+final marketDataNotifierProvider = NotifierProvider<MarketDataNotifier, Map<String, double>>(() => MarketDataNotifier());
+
 
 class ReportNotifier extends Notifier<List<ExecutionReport>> {
   final Set<String> _seenTradeIds = {};
@@ -70,13 +80,11 @@ class ReportNotifier extends Notifier<List<ExecutionReport>> {
     
     if (!_seenTradeIds.contains(uniqueId)) {
       _seenTradeIds.add(uniqueId);
-      // State'i anında güncelliyoruz, UI bağlı olmasa bile RAM'de tutulur
       state = [report, ...state]; 
     }
   }
 }
 
-// Family provider'ı kaldırdık, çünkü global tek bir history var
 final reportListProvider = NotifierProvider<ReportNotifier, List<ExecutionReport>>(
   () => ReportNotifier(),
 );

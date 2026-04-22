@@ -24,18 +24,6 @@ class VQTerminalApp extends StatelessWidget {
   }
 }
 
-class PriceHistoryNotifier extends Notifier<List<double>> {
-  @override
-  List<double> build() => [];
-  void addPrice(double price) {
-    if (state.isEmpty || state.last != price) {
-      state = [...state, price];
-      if (state.length > 100) state.removeAt(0);
-    }
-  }
-}
-final priceHistoryProvider = NotifierProvider<PriceHistoryNotifier, List<double>>(() => PriceHistoryNotifier());
-
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
   @override
@@ -46,31 +34,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    ref.read(vqPipelineProvider); 
+    ref.read(vqPipelineProvider); // Arka plan bağlantısını başlat
   }
 
   @override
   Widget build(BuildContext context) {
     final reports = ref.watch(reportListProvider);
-    
-    ref.listen(liveTradesProvider, (prev, next) {
-      if (next.valueOrNull != null) {
-        ref.read(priceHistoryProvider.notifier).addPrice(next.value!.price);
-      }
-    });
-    
-    final priceHistory = ref.watch(priceHistoryProvider);
-    final lastTradeAsync = ref.watch(liveTradesProvider);
+    final marketPrices = ref.watch(marketDataNotifierProvider);
     
     const double initialBalance = 10.00;
     double totalRealizedPnL = 0.0;
-    double posQty = 0.0;
-    double avgPrice = 0.0;
+    
+    // Multi-coin pozisyon takibi
+    Map<String, double> positions = {};
+    Map<String, double> avgPrices = {};
     List<double> pnlHistory = [0.0];
 
     for (var r in reports.reversed) {
       totalRealizedPnL += r.realizedPnl;
       pnlHistory.add(totalRealizedPnL);
+
+      double posQty = positions[r.symbol] ?? 0.0;
+      double avgPrice = avgPrices[r.symbol] ?? 0.0;
 
       if (r.side == "SELL" && posQty > 0.0) {
         double closeQty = min(r.quantity, posQty);
@@ -86,15 +71,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         avgPrice = totalValue / newQty.abs();
         posQty = newQty;
       }
+      positions[r.symbol] = posQty;
+      avgPrices[r.symbol] = avgPrice;
     }
 
     final currentBalance = initialBalance + totalRealizedPnL;
-    final currentPrice = lastTradeAsync.valueOrNull?.price ?? avgPrice;
 
-    double unrealizedPnL = 0.0;
-    if (posQty.abs() > 0.000001 && currentPrice > 0) {
-      unrealizedPnL = posQty > 0 ? (currentPrice - avgPrice) * posQty : (avgPrice - currentPrice) * posQty.abs();
-    }
+    // Tüm coinlerdeki açık pozisyonların toplam Unrealized PnL'ini hesapla
+    double totalUnrealizedPnL = 0.0;
+    positions.forEach((symbol, qty) {
+      if (qty.abs() > 0.000001) {
+        double currentPrice = marketPrices[symbol] ?? avgPrices[symbol] ?? 0.0;
+        if (currentPrice > 0) {
+          totalUnrealizedPnL += qty > 0 
+              ? (currentPrice - avgPrices[symbol]!) * qty 
+              : (avgPrices[symbol]! - currentPrice) * qty.abs();
+        }
+      }
+    });
 
     final bool isDefensiveMode = ((initialBalance - currentBalance) / initialBalance) > 0.15;
 
@@ -112,12 +106,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             _buildSystemStatusBadge(isDefensiveMode),
           ],
         ),
+        // YENİ: MULTI-COIN TICKER
         actions: [
-          lastTradeAsync.when(
-            data: (t) => _buildLiveTicker(t.symbol, t.price),
-            loading: () => const Center(child: Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))),
-            error: (_, __) => const Padding(padding: EdgeInsets.only(right:16), child: Icon(Icons.wifi_off, color: Colors.red)),
-          )
+          if (marketPrices.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: Row(
+                children: marketPrices.entries.take(4).map((e) => _buildLiveTicker(e.key.replaceAll('usdt', '').toUpperCase(), e.value)).toList(),
+              ),
+            )
+          else
+            const Center(child: Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))),
         ],
       ),
       body: LayoutBuilder(
@@ -128,7 +127,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildResponsiveStats(constraints.maxWidth, currentBalance, totalRealizedPnL, unrealizedPnL, posQty, avgPrice),
+                _buildResponsiveStats(constraints.maxWidth, currentBalance, totalRealizedPnL, totalUnrealizedPnL, positions.values.where((v) => v.abs() > 0.000001).length),
                 const SizedBox(height: 12),
                 if (isDesktop)
                   Row(
@@ -136,13 +135,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     children: [
                       Expanded(
                         flex: 4,
-                        child: Column(
-                          children: [
-                            SizedBox(height: 200, child: _buildChartContainer("PİYASA İVMESİ (SON 100 TİCK)", PriceChartPainter(priceHistory), Colors.blueAccent)),
-                            const SizedBox(height: 12),
-                            SizedBox(height: 150, child: _buildChartContainer("KÜMÜLATİF KÂR/ZARAR (USDT)", PnLChartPainter(pnlHistory), totalRealizedPnL >= 0 ? Colors.greenAccent : Colors.redAccent)),
-                          ],
-                        ),
+                        child: SizedBox(height: 362, child: _buildChartContainer("PORTFÖY KÜMÜLATİF KÂR/ZARAR (USDT)", PnLChartPainter(pnlHistory), totalRealizedPnL >= 0 ? Colors.greenAccent : Colors.redAccent)),
                       ),
                       const SizedBox(width: 12),
                       Expanded(flex: 5, child: SizedBox(height: 362, child: _buildDenseTradeLog(reports))),
@@ -151,9 +144,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 else
                   Column(
                     children: [
-                      SizedBox(height: 180, child: _buildChartContainer("PİYASA İVMESİ (SON 100 TİCK)", PriceChartPainter(priceHistory), Colors.blueAccent)),
-                      const SizedBox(height: 12),
-                      SizedBox(height: 150, child: _buildChartContainer("PnL EĞRİSİ (USDT)", PnLChartPainter(pnlHistory), totalRealizedPnL >= 0 ? Colors.greenAccent : Colors.redAccent)),
+                      SizedBox(height: 200, child: _buildChartContainer("KÜMÜLATİF PnL (USDT)", PnLChartPainter(pnlHistory), totalRealizedPnL >= 0 ? Colors.greenAccent : Colors.redAccent)),
                       const SizedBox(height: 12),
                       SizedBox(height: 400, child: _buildDenseTradeLog(reports)),
                     ],
@@ -166,7 +157,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildResponsiveStats(double maxWidth, double bal, double rpnl, double upnl, double pos, double avgP) {
+  Widget _buildResponsiveStats(double maxWidth, double bal, double rpnl, double upnl, int activePosCount) {
     int crossAxisCount = maxWidth > 1200 ? 5 : (maxWidth > 800 ? 4 : (maxWidth > 500 ? 3 : 2));
     return GridView.count(
       shrinkWrap: true,
@@ -177,9 +168,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       physics: const NeverScrollableScrollPhysics(),
       children: [
         _buildStatCard("WALLET (CÜZDAN)", "\$${bal.toStringAsFixed(4)}", Colors.amberAccent, "Net varlığınız (Sermaye + Kâr)."),
-        _buildStatCard("REALIZED (KÂR/ZARAR)", "\$${rpnl.toStringAsFixed(4)}", rpnl >= 0 ? Colors.greenAccent : Colors.redAccent, "Kapanmış işlemlerden elde edilen net sonuç."),
-        _buildStatCard("FLOATING (AÇIK İŞLEM)", "\$${upnl.toStringAsFixed(4)}", upnl >= 0 ? Colors.greenAccent : Colors.redAccent, "Şu an açık olan pozisyonun kâr/zarar durumu."),
-        _buildPositionCard(pos, avgP),
+        _buildStatCard("REALIZED PnL", "\$${rpnl.toStringAsFixed(4)}", rpnl >= 0 ? Colors.greenAccent : Colors.redAccent, "Kapanmış işlemler net kâr/zarar."),
+        _buildStatCard("FLOATING PnL", "\$${upnl.toStringAsFixed(4)}", upnl >= 0 ? Colors.greenAccent : Colors.redAccent, "Tüm açık pozisyonların toplam kâr/zararı."),
+        _buildStatCard("ACTIVE POSITIONS", "$activePosCount Adet", Colors.blueAccent, "Şu an aktif olan multi-coin pozisyon sayısı."),
         _buildKillSwitch(),
       ],
     );
@@ -201,9 +192,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildLiveTicker(String symbol, double price) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16), padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(color: Colors.green.withOpacity(0.05), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.green.withOpacity(0.2))),
-      child: Center(child: Text('$symbol: ${price.toStringAsFixed(2)}', style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 13))),
+      margin: const EdgeInsets.only(left: 8, top: 10, bottom: 10), 
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.white.withOpacity(0.1))),
+      child: Center(child: Text('$symbol: ${price.toStringAsFixed(1)}', style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 11))),
     );
   }
 
@@ -219,39 +211,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(height: 2),
           FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.w900, fontFamily: 'monospace'))),
           const SizedBox(height: 2),
-          Text(subtitle, style: const TextStyle(color: Colors.white24, fontSize: 9)), // AÇIKLAMA EKLENDİ
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPositionCard(double posQty, double avgPrice) {
-    final isFlat = posQty.abs() < 0.000001;
-    final isLong = posQty > 0;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: isFlat ? Theme.of(context).cardColor : (isLong ? Colors.green.withOpacity(0.05) : Colors.red.withOpacity(0.05)),
-        borderRadius: BorderRadius.circular(8), border: Border.all(color: isFlat ? Colors.white.withOpacity(0.05) : (isLong ? Colors.green.withOpacity(0.3) : Colors.red.withOpacity(0.3)))
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text("NET POSITION (POZİSYON)", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-          const SizedBox(height: 2),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              children: [
-                Text(isFlat ? "FLAT" : "${posQty > 0 ? '+' : ''}${posQty.toStringAsFixed(5)}", 
-                  style: TextStyle(color: isFlat ? Colors.white54 : (isLong ? Colors.greenAccent : Colors.redAccent), fontSize: 18, fontWeight: FontWeight.w900, fontFamily: 'monospace')),
-                if (!isFlat) Text(" @ ${avgPrice.toStringAsFixed(1)}", style: const TextStyle(color: Colors.white38, fontSize: 12, fontFamily: 'monospace')),
-              ],
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(isFlat ? "Açık pozisyonunuz yok." : (isLong ? "Yükselişe oynuyorsunuz (LONG)." : "Düşüşe oynuyorsunuz (SHORT)."), style: const TextStyle(color: Colors.white24, fontSize: 9)),
+          Text(subtitle, style: const TextStyle(color: Colors.white24, fontSize: 9)),
         ],
       ),
     );
@@ -299,7 +259,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         children: [
           const Padding(
             padding: EdgeInsets.all(12.0),
-            child: Text("İŞLEM DEFTERİ (EXECUTION LOG)", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
+            child: Text("İŞLEM DEFTERİ (MULTI-COIN LOG)", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
           ),
           const Divider(height: 1, color: Colors.white10),
           Expanded(
@@ -325,9 +285,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               child: Text(r.side, style: TextStyle(color: isBuy ? Colors.greenAccent : Colors.redAccent, fontSize: 10, fontWeight: FontWeight.bold)),
                             )),
                             const SizedBox(width: 8),
-                            Expanded(flex: 2, child: Text(r.symbol, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
-                            Expanded(flex: 2, child: Text(r.quantity.toStringAsFixed(5), textAlign: TextAlign.right, style: const TextStyle(fontFamily: 'monospace', fontSize: 13))),
-                            Expanded(flex: 2, child: Text("\$${r.executionPrice.toStringAsFixed(2)}", textAlign: TextAlign.right, style: const TextStyle(fontFamily: 'monospace', fontSize: 13))),
+                            Expanded(flex: 2, child: Text(r.symbol.replaceAll('usdt', '').toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
+                            Expanded(flex: 2, child: Text(r.quantity.toStringAsFixed(4), textAlign: TextAlign.right, style: const TextStyle(fontFamily: 'monospace', fontSize: 13))),
+                            Expanded(flex: 2, child: Text("\$${r.executionPrice.toStringAsFixed(1)}", textAlign: TextAlign.right, style: const TextStyle(fontFamily: 'monospace', fontSize: 13))),
                             Expanded(flex: 2, child: Text("${r.realizedPnl >= 0 ? '+' : ''}${r.realizedPnl.toStringAsFixed(4)}", textAlign: TextAlign.right, style: TextStyle(color: pnlColor, fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 13))),
                           ],
                         ),
@@ -339,50 +299,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
     );
   }
-}
-
-class PriceChartPainter extends CustomPainter {
-  final List<double> history;
-  PriceChartPainter(this.history);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (history.length < 2) return;
-    
-    final paint = Paint()..color = Colors.blueAccent.withOpacity(0.8)..strokeWidth = 1.5..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
-    final minPrice = history.reduce(min);
-    final maxPrice = history.reduce(max);
-    final range = (maxPrice - minPrice) == 0 ? 1.0 : (maxPrice - minPrice);
-    final paddedRange = range * 1.2; 
-    final paddedMin = minPrice - (range * 0.1);
-    
-    final path = Path();
-    final dx = size.width / (history.length - 1);
-
-    for (int i = 0; i < history.length; i++) {
-      final x = i * dx;
-      final normalizedY = (history[i] - paddedMin) / paddedRange;
-      final y = size.height - (normalizedY * size.height);
-      if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
-    }
-    canvas.drawPath(path, paint);
-
-    final lastY = size.height - (((history.last - paddedMin) / paddedRange) * size.height);
-    canvas.drawCircle(Offset(size.width, lastY), 4, Paint()..color = Colors.white);
-
-    _drawText(canvas, size, "\$${maxPrice.toStringAsFixed(1)}", Offset(0, 0), Colors.white54);
-    _drawText(canvas, size, "\$${minPrice.toStringAsFixed(1)}", Offset(0, size.height - 14), Colors.white54);
-  }
-
-  void _drawText(Canvas canvas, Size size, String text, Offset offset, Color color) {
-    final textSpan = TextSpan(text: text, style: TextStyle(color: color, fontSize: 10, fontFamily: 'monospace'));
-    final textPainter = TextPainter(text: textSpan, textDirection: TextDirection.ltr);
-    textPainter.layout();
-    textPainter.paint(canvas, offset);
-  }
-
-  @override
-  bool shouldRepaint(covariant PriceChartPainter oldDelegate) => true;
 }
 
 class PnLChartPainter extends CustomPainter {
