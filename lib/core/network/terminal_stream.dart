@@ -6,6 +6,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../generated/sentinel/api/v1/bundle.pb.dart';
 import '../../generated/sentinel/market/v1/market_data.pb.dart';
 import '../../generated/sentinel/execution/v1/execution.pb.dart';
+import '../../generated/sentinel/wallet/v1/wallet.pb.dart'; // YENİ
 
 String getWebSocketUrl() {
   const envUrl = String.fromEnvironment('WS_URL', defaultValue: '');
@@ -27,7 +28,6 @@ final vqPipelineProvider = StreamProvider<StreamBundle>((ref) async* {
 
   while (true) {
     try {
-      debugPrint("🔗 API Ağ Geçidine Bağlanılıyor: $wsUrl");
       final channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
       await for (final bin in channel.stream) {
@@ -40,6 +40,9 @@ final vqPipelineProvider = StreamProvider<StreamBundle>((ref) async* {
         if (bundle.hasTrade()) {
           ref.read(marketDataNotifierProvider.notifier).updatePrice(bundle.trade.symbol, bundle.trade.price);
         }
+        if (bundle.hasEquity()) { // YENİ: Cüzdan verisini State'e yaz
+          ref.read(equityProvider.notifier).updateEquity(bundle.equity);
+        }
         
         yield bundle;
       }
@@ -48,11 +51,18 @@ final vqPipelineProvider = StreamProvider<StreamBundle>((ref) async* {
     }
 
     retryCount++;
-    final delay = (retryCount * 2).clamp(2, 10);
-    debugPrint("🔌 Bağlantı koptu. $delay saniye sonra yeniden denenecek...");
-    await Future.delayed(Duration(seconds: delay));
+    await Future.delayed(Duration(seconds: (retryCount * 2).clamp(2, 10)));
   }
 });
+
+
+// YENİ STATE MANAGER: EquityProvider
+class EquityNotifier extends Notifier<EquitySnapshot?> {
+  @override
+  EquitySnapshot? build() => null;
+  void updateEquity(EquitySnapshot equity) { state = equity; }
+}
+final equityProvider = NotifierProvider<EquityNotifier, EquitySnapshot?>(() => EquityNotifier());
 
 // YENİ: MULTI-COIN FİYAT YÖNETİCİSİ
 class MarketDataNotifier extends Notifier<Map<String, double>> {

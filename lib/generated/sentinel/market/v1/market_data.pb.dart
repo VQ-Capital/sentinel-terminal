@@ -122,6 +122,99 @@ class AggTrade extends $pb.GeneratedMessage {
   void clearIsBuyerMaker() => $_clearField(5);
 }
 
+/// RawNewsEvent (Ham Haber Akışı)
+/// sentinel-news-ingest servisi gürültüyü eledikten sonra basar.
+class RawNewsEvent extends $pb.GeneratedMessage {
+  factory RawNewsEvent({
+    $core.String? source,
+    $core.String? headline,
+    $core.String? content,
+    $fixnum.Int64? timestamp,
+  }) {
+    final result = create();
+    if (source != null) result.source = source;
+    if (headline != null) result.headline = headline;
+    if (content != null) result.content = content;
+    if (timestamp != null) result.timestamp = timestamp;
+    return result;
+  }
+
+  RawNewsEvent._();
+
+  factory RawNewsEvent.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory RawNewsEvent.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'RawNewsEvent',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'sentinel.market.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'source')
+    ..aOS(2, _omitFieldNames ? '' : 'headline')
+    ..aOS(3, _omitFieldNames ? '' : 'content')
+    ..aInt64(4, _omitFieldNames ? '' : 'timestamp')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RawNewsEvent clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RawNewsEvent copyWith(void Function(RawNewsEvent) updates) =>
+      super.copyWith((message) => updates(message as RawNewsEvent))
+          as RawNewsEvent;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static RawNewsEvent create() => RawNewsEvent._();
+  @$core.override
+  RawNewsEvent createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static RawNewsEvent getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RawNewsEvent>(create);
+  static RawNewsEvent? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get source => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set source($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSource() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSource() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get headline => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set headline($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasHeadline() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearHeadline() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get content => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set content($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasContent() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearContent() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $fixnum.Int64 get timestamp => $_getI64(3);
+  @$pb.TagNumber(4)
+  set timestamp($fixnum.Int64 value) => $_setInt64(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasTimestamp() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearTimestamp() => $_clearField(4);
+}
+
 /// OrderbookDepth (Emir Defteri Derinliği)
 /// Gerçekçi PnL (Kâr/Zarar) ve Slippage (Kayma) hesaplamaları için
 /// Level 2 (Derinlik) emir defteri simülasyonunda kullanılır.

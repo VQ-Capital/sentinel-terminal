@@ -55,9 +55,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final reports = ref.watch(reportListProvider);
     final marketPrices = ref.watch(marketDataNotifierProvider);
+    final equityData = ref.watch(equityProvider); // YENİ: Wallet State'i
 
     const double initialBalance = 10.00;
-    double totalRealizedPnL = 0.0;
+    double localRealizedPnL = 0.0;
 
     Map<String, double> positions = {};
     Map<String, double> avgPrices = {};
@@ -67,7 +68,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     int winningTrades = 0;
 
     for (var r in reports.reversed) {
-      totalRealizedPnL += r.realizedPnl;
+      localRealizedPnL += r.realizedPnl;
       pnlHistory.add(totalRealizedPnL);
 
       double posQty = positions[r.symbol] ?? 0.0;
@@ -97,7 +98,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       avgPrices[r.symbol] = avgPrice;
     }
 
-    final currentBalance = initialBalance + totalRealizedPnL;
+      // 🚀 DEVRİM BURADA: Ekranda gösterilen rakamlar artık lokal hesaplama DEĞİL, 
+    // Sentinel-Wallet'ın NATS'a bastığı gerçek "Source of Truth" verisidir!
+    final currentBalance = equityData?.totalEquityUsd ?? (initialBalance + localRealizedPnL);
+    final totalUnrealizedPnL = equityData?.totalUnrealizedPnl ?? 0.0; // Floating
+    
+    final bool isDefensiveMode = ((initialBalance - currentBalance) / initialBalance) > 0.15;
+
     double totalUnrealizedPnL = 0.0;
     int activePositionsCount = 0;
 
@@ -114,7 +121,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     });
 
     double winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0.0;
-    final bool isDefensiveMode = ((initialBalance - currentBalance) / initialBalance) > 0.15;
+
 
     return Scaffold(
       appBar: _buildAppBar(isDefensiveMode),

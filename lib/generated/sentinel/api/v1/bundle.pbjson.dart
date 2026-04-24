@@ -46,6 +46,24 @@ const StreamBundle$json = {
       '9': 0,
       '10': 'signal'
     },
+    {
+      '1': 'command',
+      '3': 4,
+      '4': 1,
+      '5': 11,
+      '6': '.sentinel.api.v1.ControlCommand',
+      '9': 0,
+      '10': 'command'
+    },
+    {
+      '1': 'equity',
+      '3': 5,
+      '4': 1,
+      '5': 11,
+      '6': '.sentinel.wallet.v1.EquitySnapshot',
+      '9': 0,
+      '10': 'equity'
+    },
   ],
   '8': [
     {'1': 'message'},
@@ -57,4 +75,39 @@ final $typed_data.Uint8List streamBundleDescriptor = $convert.base64Decode(
     'CgxTdHJlYW1CdW5kbGUSNAoFdHJhZGUYASABKAsyHC5zZW50aW5lbC5tYXJrZXQudjEuQWdnVH'
     'JhZGVIAFIFdHJhZGUSQAoGcmVwb3J0GAIgASgLMiYuc2VudGluZWwuZXhlY3V0aW9uLnYxLkV4'
     'ZWN1dGlvblJlcG9ydEgAUgZyZXBvcnQSPAoGc2lnbmFsGAMgASgLMiIuc2VudGluZWwuZXhlY3'
-    'V0aW9uLnYxLlRyYWRlU2lnbmFsSABSBnNpZ25hbEIJCgdtZXNzYWdl');
+    'V0aW9uLnYxLlRyYWRlU2lnbmFsSABSBnNpZ25hbBI7Cgdjb21tYW5kGAQgASgLMh8uc2VudGlu'
+    'ZWwuYXBpLnYxLkNvbnRyb2xDb21tYW5kSABSB2NvbW1hbmQSPAoGZXF1aXR5GAUgASgLMiIuc2'
+    'VudGluZWwud2FsbGV0LnYxLkVxdWl0eVNuYXBzaG90SABSBmVxdWl0eUIJCgdtZXNzYWdl');
+
+@$core.Deprecated('Use controlCommandDescriptor instead')
+const ControlCommand$json = {
+  '1': 'ControlCommand',
+  '2': [
+    {
+      '1': 'type',
+      '3': 1,
+      '4': 1,
+      '5': 14,
+      '6': '.sentinel.api.v1.ControlCommand.CommandType',
+      '10': 'type'
+    },
+  ],
+  '4': [ControlCommand_CommandType$json],
+};
+
+@$core.Deprecated('Use controlCommandDescriptor instead')
+const ControlCommand_CommandType$json = {
+  '1': 'CommandType',
+  '2': [
+    {'1': 'COMMAND_TYPE_UNSPECIFIED', '2': 0},
+    {'1': 'COMMAND_TYPE_STOP_ALL', '2': 1},
+    {'1': 'COMMAND_TYPE_START_ALL', '2': 2},
+  ],
+};
+
+/// Descriptor for `ControlCommand`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List controlCommandDescriptor = $convert.base64Decode(
+    'Cg5Db250cm9sQ29tbWFuZBI/CgR0eXBlGAEgASgOMisuc2VudGluZWwuYXBpLnYxLkNvbnRyb2'
+    'xDb21tYW5kLkNvbW1hbmRUeXBlUgR0eXBlImIKC0NvbW1hbmRUeXBlEhwKGENPTU1BTkRfVFlQ'
+    'RV9VTlNQRUNJRklFRBAAEhkKFUNPTU1BTkRfVFlQRV9TVE9QX0FMTBABEhoKFkNPTU1BTkRfVF'
+    'lQRV9TVEFSVF9BTEwQAg==');

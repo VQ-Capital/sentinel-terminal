@@ -16,22 +16,29 @@ import 'package:protobuf/protobuf.dart' as $pb;
 
 import '../../execution/v1/execution.pb.dart' as $1;
 import '../../market/v1/market_data.pb.dart' as $0;
+import '../../wallet/v1/wallet.pb.dart' as $2;
+import 'bundle.pbenum.dart';
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
-enum StreamBundle_Message { trade, report, signal, notSet }
+export 'bundle.pbenum.dart';
 
-/// StreamBundle: WebSocket üzerinden gönderilen tüm mesajların ana zarfı.
+enum StreamBundle_Message { trade, report, signal, command, equity, notSet }
+
 class StreamBundle extends $pb.GeneratedMessage {
   factory StreamBundle({
     $0.AggTrade? trade,
     $1.ExecutionReport? report,
     $1.TradeSignal? signal,
+    ControlCommand? command,
+    $2.EquitySnapshot? equity,
   }) {
     final result = create();
     if (trade != null) result.trade = trade;
     if (report != null) result.report = report;
     if (signal != null) result.signal = signal;
+    if (command != null) result.command = command;
+    if (equity != null) result.equity = equity;
     return result;
   }
 
@@ -49,6 +56,8 @@ class StreamBundle extends $pb.GeneratedMessage {
     1: StreamBundle_Message.trade,
     2: StreamBundle_Message.report,
     3: StreamBundle_Message.signal,
+    4: StreamBundle_Message.command,
+    5: StreamBundle_Message.equity,
     0: StreamBundle_Message.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
@@ -56,13 +65,17 @@ class StreamBundle extends $pb.GeneratedMessage {
       package:
           const $pb.PackageName(_omitMessageNames ? '' : 'sentinel.api.v1'),
       createEmptyInstance: create)
-    ..oo(0, [1, 2, 3])
+    ..oo(0, [1, 2, 3, 4, 5])
     ..aOM<$0.AggTrade>(1, _omitFieldNames ? '' : 'trade',
         subBuilder: $0.AggTrade.create)
     ..aOM<$1.ExecutionReport>(2, _omitFieldNames ? '' : 'report',
         subBuilder: $1.ExecutionReport.create)
     ..aOM<$1.TradeSignal>(3, _omitFieldNames ? '' : 'signal',
         subBuilder: $1.TradeSignal.create)
+    ..aOM<ControlCommand>(4, _omitFieldNames ? '' : 'command',
+        subBuilder: ControlCommand.create)
+    ..aOM<$2.EquitySnapshot>(5, _omitFieldNames ? '' : 'equity',
+        subBuilder: $2.EquitySnapshot.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -87,11 +100,15 @@ class StreamBundle extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
   @$pb.TagNumber(3)
+  @$pb.TagNumber(4)
+  @$pb.TagNumber(5)
   StreamBundle_Message whichMessage() =>
       _StreamBundle_MessageByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
   @$pb.TagNumber(3)
+  @$pb.TagNumber(4)
+  @$pb.TagNumber(5)
   void clearMessage() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -126,6 +143,84 @@ class StreamBundle extends $pb.GeneratedMessage {
   void clearSignal() => $_clearField(3);
   @$pb.TagNumber(3)
   $1.TradeSignal ensureSignal() => $_ensure(2);
+
+  @$pb.TagNumber(4)
+  ControlCommand get command => $_getN(3);
+  @$pb.TagNumber(4)
+  set command(ControlCommand value) => $_setField(4, value);
+  @$pb.TagNumber(4)
+  $core.bool hasCommand() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearCommand() => $_clearField(4);
+  @$pb.TagNumber(4)
+  ControlCommand ensureCommand() => $_ensure(3);
+
+  @$pb.TagNumber(5)
+  $2.EquitySnapshot get equity => $_getN(4);
+  @$pb.TagNumber(5)
+  set equity($2.EquitySnapshot value) => $_setField(5, value);
+  @$pb.TagNumber(5)
+  $core.bool hasEquity() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearEquity() => $_clearField(5);
+  @$pb.TagNumber(5)
+  $2.EquitySnapshot ensureEquity() => $_ensure(4);
+}
+
+class ControlCommand extends $pb.GeneratedMessage {
+  factory ControlCommand({
+    ControlCommand_CommandType? type,
+  }) {
+    final result = create();
+    if (type != null) result.type = type;
+    return result;
+  }
+
+  ControlCommand._();
+
+  factory ControlCommand.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ControlCommand.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ControlCommand',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'sentinel.api.v1'),
+      createEmptyInstance: create)
+    ..aE<ControlCommand_CommandType>(1, _omitFieldNames ? '' : 'type',
+        enumValues: ControlCommand_CommandType.values)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ControlCommand clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ControlCommand copyWith(void Function(ControlCommand) updates) =>
+      super.copyWith((message) => updates(message as ControlCommand))
+          as ControlCommand;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ControlCommand create() => ControlCommand._();
+  @$core.override
+  ControlCommand createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ControlCommand getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ControlCommand>(create);
+  static ControlCommand? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  ControlCommand_CommandType get type => $_getN(0);
+  @$pb.TagNumber(1)
+  set type(ControlCommand_CommandType value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasType() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearType() => $_clearField(1);
 }
 
 const $core.bool _omitFieldNames =

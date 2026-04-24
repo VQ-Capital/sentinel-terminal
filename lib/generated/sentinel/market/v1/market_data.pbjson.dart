@@ -33,6 +33,23 @@ final $typed_data.Uint8List aggTradeDescriptor = $convert.base64Decode(
     'USGgoIcXVhbnRpdHkYAyABKAFSCHF1YW50aXR5EhwKCXRpbWVzdGFtcBgEIAEoA1IJdGltZXN0'
     'YW1wEiQKDmlzX2J1eWVyX21ha2VyGAUgASgIUgxpc0J1eWVyTWFrZXI=');
 
+@$core.Deprecated('Use rawNewsEventDescriptor instead')
+const RawNewsEvent$json = {
+  '1': 'RawNewsEvent',
+  '2': [
+    {'1': 'source', '3': 1, '4': 1, '5': 9, '10': 'source'},
+    {'1': 'headline', '3': 2, '4': 1, '5': 9, '10': 'headline'},
+    {'1': 'content', '3': 3, '4': 1, '5': 9, '10': 'content'},
+    {'1': 'timestamp', '3': 4, '4': 1, '5': 3, '10': 'timestamp'},
+  ],
+};
+
+/// Descriptor for `RawNewsEvent`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List rawNewsEventDescriptor = $convert.base64Decode(
+    'CgxSYXdOZXdzRXZlbnQSFgoGc291cmNlGAEgASgJUgZzb3VyY2USGgoIaGVhZGxpbmUYAiABKA'
+    'lSCGhlYWRsaW5lEhgKB2NvbnRlbnQYAyABKAlSB2NvbnRlbnQSHAoJdGltZXN0YW1wGAQgASgD'
+    'Ugl0aW1lc3RhbXA=');
+
 @$core.Deprecated('Use orderbookDepthDescriptor instead')
 const OrderbookDepth$json = {
   '1': 'OrderbookDepth',
