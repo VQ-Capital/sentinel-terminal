@@ -1,4 +1,4 @@
-// ========== DOSYA: sentinel-terminal/lib/core/network/terminal_stream.dart ==========
+// lib/core/network/terminal_stream.dart
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -7,6 +7,9 @@ import '../../generated/sentinel/api/v1/bundle.pb.dart';
 import '../../generated/sentinel/market/v1/market_data.pb.dart';
 import '../../generated/sentinel/execution/v1/execution.pb.dart';
 import '../../generated/sentinel/wallet/v1/wallet.pb.dart';
+
+// Bağlantı durumunu takip eden basit bir provider
+final connectionStateProvider = StateProvider<bool>((ref) => false);
 
 String getWebSocketUrl() {
   const envUrl = String.fromEnvironment('WS_URL', defaultValue: '');
@@ -32,6 +35,9 @@ final vqPipelineProvider = StreamProvider<StreamBundle>((ref) async* {
 
       await for (final bin in channel.stream) {
         retryCount = 0;
+        // Bağlantı başarılı, durumu güncelle
+        ref.read(connectionStateProvider.notifier).state = true;
+        
         final bundle = StreamBundle.fromBuffer(bin as List<int>);
         
         if (bundle.hasReport()) {
@@ -43,7 +49,6 @@ final vqPipelineProvider = StreamProvider<StreamBundle>((ref) async* {
         if (bundle.hasEquity()) {
           ref.read(equityProvider.notifier).updateEquity(bundle.equity);
         }
-        // ✅ YENİ: Z-Score Vektörlerini yakala
         if (bundle.hasVector()) {
           ref.read(zScoreProvider.notifier).updateVector(bundle.vector);
         }
@@ -52,13 +57,17 @@ final vqPipelineProvider = StreamProvider<StreamBundle>((ref) async* {
       }
     } catch (e) {
       debugPrint("⚠️ WebSocket Hatası: $e");
+      // Hata olduğunda bağlantı koptu de
+      ref.read(connectionStateProvider.notifier).state = false;
     }
+    
+    ref.read(connectionStateProvider.notifier).state = false;
     retryCount++;
     await Future.delayed(Duration(seconds: (retryCount * 2).clamp(2, 10)));
   }
 });
 
-// ✅ YENİ STATE MANAGER: Z-Score Radar Data
+// --- State Notifiers --- (Aşağıdaki kısımlar eski kodun aynısı kalacak)
 class ZScoreNotifier extends Notifier<Map<String, MarketStateVector>> {
   @override
   Map<String, MarketStateVector> build() => {};
@@ -68,9 +77,6 @@ class ZScoreNotifier extends Notifier<Map<String, MarketStateVector>> {
 }
 final zScoreProvider = NotifierProvider<ZScoreNotifier, Map<String, MarketStateVector>>(() => ZScoreNotifier());
 
-
-
-// YENİ STATE MANAGER: EquityProvider
 class EquityNotifier extends Notifier<EquitySnapshot?> {
   @override
   EquitySnapshot? build() => null;
@@ -78,13 +84,10 @@ class EquityNotifier extends Notifier<EquitySnapshot?> {
 }
 final equityProvider = NotifierProvider<EquityNotifier, EquitySnapshot?>(() => EquityNotifier());
 
-// YENİ: MULTI-COIN FİYAT YÖNETİCİSİ
 class MarketDataNotifier extends Notifier<Map<String, double>> {
   @override
   Map<String, double> build() => {};
-
   void updatePrice(String symbol, double price) {
-    // Performansı korumak için referansı kopyalayarak atama yapıyoruz
     final newState = Map<String, double>.from(state);
     newState[symbol] = price;
     state = newState;
@@ -92,23 +95,16 @@ class MarketDataNotifier extends Notifier<Map<String, double>> {
 }
 final marketDataNotifierProvider = NotifierProvider<MarketDataNotifier, Map<String, double>>(() => MarketDataNotifier());
 
-
 class ReportNotifier extends Notifier<List<ExecutionReport>> {
   final Set<String> _seenTradeIds = {};
-
   @override
   List<ExecutionReport> build() => [];
-
   void addReport(ExecutionReport report) {
     final uniqueId = "${report.symbol}_${report.side}_${report.timestamp}";
-    
     if (!_seenTradeIds.contains(uniqueId)) {
       _seenTradeIds.add(uniqueId);
       state = [report, ...state]; 
     }
   }
 }
-
-final reportListProvider = NotifierProvider<ReportNotifier, List<ExecutionReport>>(
-  () => ReportNotifier(),
-);
+final reportListProvider = NotifierProvider<ReportNotifier, List<ExecutionReport>>(() => ReportNotifier());
