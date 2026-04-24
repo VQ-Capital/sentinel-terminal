@@ -64,6 +64,15 @@ const StreamBundle$json = {
       '9': 0,
       '10': 'equity'
     },
+    {
+      '1': 'vector',
+      '3': 6,
+      '4': 1,
+      '5': 11,
+      '6': '.sentinel.market.v1.MarketStateVector',
+      '9': 0,
+      '10': 'vector'
+    },
   ],
   '8': [
     {'1': 'message'},
@@ -77,7 +86,9 @@ final $typed_data.Uint8List streamBundleDescriptor = $convert.base64Decode(
     'ZWN1dGlvblJlcG9ydEgAUgZyZXBvcnQSPAoGc2lnbmFsGAMgASgLMiIuc2VudGluZWwuZXhlY3'
     'V0aW9uLnYxLlRyYWRlU2lnbmFsSABSBnNpZ25hbBI7Cgdjb21tYW5kGAQgASgLMh8uc2VudGlu'
     'ZWwuYXBpLnYxLkNvbnRyb2xDb21tYW5kSABSB2NvbW1hbmQSPAoGZXF1aXR5GAUgASgLMiIuc2'
-    'VudGluZWwud2FsbGV0LnYxLkVxdWl0eVNuYXBzaG90SABSBmVxdWl0eUIJCgdtZXNzYWdl');
+    'VudGluZWwud2FsbGV0LnYxLkVxdWl0eVNuYXBzaG90SABSBmVxdWl0eRI/CgZ2ZWN0b3IYBiAB'
+    'KAsyJS5zZW50aW5lbC5tYXJrZXQudjEuTWFya2V0U3RhdGVWZWN0b3JIAFIGdmVjdG9yQgkKB2'
+    '1lc3NhZ2U=');
 
 @$core.Deprecated('Use controlCommandDescriptor instead')
 const ControlCommand$json = {

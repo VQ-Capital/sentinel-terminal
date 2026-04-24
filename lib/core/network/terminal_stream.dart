@@ -6,7 +6,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../generated/sentinel/api/v1/bundle.pb.dart';
 import '../../generated/sentinel/market/v1/market_data.pb.dart';
 import '../../generated/sentinel/execution/v1/execution.pb.dart';
-import '../../generated/sentinel/wallet/v1/wallet.pb.dart'; // YENİ
+import '../../generated/sentinel/wallet/v1/wallet.pb.dart';
 
 String getWebSocketUrl() {
   const envUrl = String.fromEnvironment('WS_URL', defaultValue: '');
@@ -40,20 +40,34 @@ final vqPipelineProvider = StreamProvider<StreamBundle>((ref) async* {
         if (bundle.hasTrade()) {
           ref.read(marketDataNotifierProvider.notifier).updatePrice(bundle.trade.symbol, bundle.trade.price);
         }
-        if (bundle.hasEquity()) { // YENİ: Cüzdan verisini State'e yaz
+        if (bundle.hasEquity()) {
           ref.read(equityProvider.notifier).updateEquity(bundle.equity);
+        }
+        // ✅ YENİ: Z-Score Vektörlerini yakala
+        if (bundle.hasVector()) {
+          ref.read(zScoreProvider.notifier).updateVector(bundle.vector);
         }
         
         yield bundle;
       }
     } catch (e) {
-      debugPrint("⚠️ WebSocket Bağlantı Hatası: $e");
+      debugPrint("⚠️ WebSocket Hatası: $e");
     }
-
     retryCount++;
     await Future.delayed(Duration(seconds: (retryCount * 2).clamp(2, 10)));
   }
 });
+
+// ✅ YENİ STATE MANAGER: Z-Score Radar Data
+class ZScoreNotifier extends Notifier<Map<String, MarketStateVector>> {
+  @override
+  Map<String, MarketStateVector> build() => {};
+  void updateVector(MarketStateVector vector) {
+    state = {...state, vector.symbol: vector};
+  }
+}
+final zScoreProvider = NotifierProvider<ZScoreNotifier, Map<String, MarketStateVector>>(() => ZScoreNotifier());
+
 
 
 // YENİ STATE MANAGER: EquityProvider

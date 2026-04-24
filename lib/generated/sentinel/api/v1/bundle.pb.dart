@@ -23,7 +23,15 @@ export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
 export 'bundle.pbenum.dart';
 
-enum StreamBundle_Message { trade, report, signal, command, equity, notSet }
+enum StreamBundle_Message {
+  trade,
+  report,
+  signal,
+  command,
+  equity,
+  vector,
+  notSet
+}
 
 class StreamBundle extends $pb.GeneratedMessage {
   factory StreamBundle({
@@ -32,6 +40,7 @@ class StreamBundle extends $pb.GeneratedMessage {
     $1.TradeSignal? signal,
     ControlCommand? command,
     $2.EquitySnapshot? equity,
+    $0.MarketStateVector? vector,
   }) {
     final result = create();
     if (trade != null) result.trade = trade;
@@ -39,6 +48,7 @@ class StreamBundle extends $pb.GeneratedMessage {
     if (signal != null) result.signal = signal;
     if (command != null) result.command = command;
     if (equity != null) result.equity = equity;
+    if (vector != null) result.vector = vector;
     return result;
   }
 
@@ -58,6 +68,7 @@ class StreamBundle extends $pb.GeneratedMessage {
     3: StreamBundle_Message.signal,
     4: StreamBundle_Message.command,
     5: StreamBundle_Message.equity,
+    6: StreamBundle_Message.vector,
     0: StreamBundle_Message.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
@@ -65,7 +76,7 @@ class StreamBundle extends $pb.GeneratedMessage {
       package:
           const $pb.PackageName(_omitMessageNames ? '' : 'sentinel.api.v1'),
       createEmptyInstance: create)
-    ..oo(0, [1, 2, 3, 4, 5])
+    ..oo(0, [1, 2, 3, 4, 5, 6])
     ..aOM<$0.AggTrade>(1, _omitFieldNames ? '' : 'trade',
         subBuilder: $0.AggTrade.create)
     ..aOM<$1.ExecutionReport>(2, _omitFieldNames ? '' : 'report',
@@ -76,6 +87,8 @@ class StreamBundle extends $pb.GeneratedMessage {
         subBuilder: ControlCommand.create)
     ..aOM<$2.EquitySnapshot>(5, _omitFieldNames ? '' : 'equity',
         subBuilder: $2.EquitySnapshot.create)
+    ..aOM<$0.MarketStateVector>(6, _omitFieldNames ? '' : 'vector',
+        subBuilder: $0.MarketStateVector.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -102,6 +115,7 @@ class StreamBundle extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   @$pb.TagNumber(4)
   @$pb.TagNumber(5)
+  @$pb.TagNumber(6)
   StreamBundle_Message whichMessage() =>
       _StreamBundle_MessageByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(1)
@@ -109,6 +123,7 @@ class StreamBundle extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   @$pb.TagNumber(4)
   @$pb.TagNumber(5)
+  @$pb.TagNumber(6)
   void clearMessage() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -165,6 +180,17 @@ class StreamBundle extends $pb.GeneratedMessage {
   void clearEquity() => $_clearField(5);
   @$pb.TagNumber(5)
   $2.EquitySnapshot ensureEquity() => $_ensure(4);
+
+  @$pb.TagNumber(6)
+  $0.MarketStateVector get vector => $_getN(5);
+  @$pb.TagNumber(6)
+  set vector($0.MarketStateVector value) => $_setField(6, value);
+  @$pb.TagNumber(6)
+  $core.bool hasVector() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearVector() => $_clearField(6);
+  @$pb.TagNumber(6)
+  $0.MarketStateVector ensureVector() => $_ensure(5);
 }
 
 class ControlCommand extends $pb.GeneratedMessage {

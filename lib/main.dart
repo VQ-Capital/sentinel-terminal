@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/network/terminal_stream.dart';
 import 'generated/sentinel/execution/v1/execution.pb.dart';
+import 'generated/sentinel/market/v1/market_data.pb.dart';
 
 void main() {
   runApp(const ProviderScope(child: VQTerminalApp()));
@@ -59,6 +60,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final reports = ref.watch(reportListProvider);
     final marketPrices = ref.watch(marketDataNotifierProvider);
+    final zVectors = ref.watch(zScoreProvider);
     final equityData = ref.watch(equityProvider);
 
     const double initialBalance = 10.00;
@@ -157,6 +159,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
                                     Expanded(flex: 3, child: _buildPnLChartContainer("KÜMÜLATİF PnL", PnLChartPainter(pnlHistory), displayRealizedPnL)),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      flex: 2, 
+                                      child: Column(
+                                        children: [
+                                          Expanded(child: _buildZScorePanel("BTCUSDT", zVectors)),
+                                          const SizedBox(height: 16),
+                                          _buildLatencyHeatmap(reports),
+                                        ],
+                                      )
+                                    ),
                                     const SizedBox(width: 16),
                                     Expanded(flex: 2, child: _buildLatencyChartContainer("SLA WATCHDOG (LATENCY)", LatencyChartPainter(recentLatencies), avgLatency)),
                                     const SizedBox(width: 16),
@@ -564,6 +577,88 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
     );
   }
+
+  // 1. Z-SCORE ANALYTICS PANEL (HFT Radar)
+  Widget _buildZScorePanel(String symbol, Map<String, MarketStateVector> vectors) {
+    final vec = vectors[symbol];
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF121214),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("V3 NEURAL RADAR", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
+          const SizedBox(height: 16),
+          if (vec == null) 
+            const Expanded(child: Center(child: Text("Sinyal Bekleniyor...", style: TextStyle(color: Colors.white24, fontSize: 10))))
+          else ...[
+            _buildZBar("VELOCITY", vec.priceVelocity, Colors.blueAccent),
+            const SizedBox(height: 12),
+            _buildZBar("IMBALANCE", vec.volumeImbalance, Colors.orangeAccent),
+            const SizedBox(height: 12),
+            _buildZBar("SENTIMENT", vec.sentimentScore, Colors.purpleAccent),
+            const Spacer(),
+            Text("Last Match: ${DateTime.now().toString().substring(11,19)}", style: const TextStyle(color: Colors.white24, fontSize: 8)),
+          ]
+        ],
+      ),
+    );
+  }
+
+  Widget _buildZBar(String label, double value, Color color) {
+    // Z-Score: -3.0 ile +3.0 arasını %0-100'e mapliyoruz.
+    final double normalized = ((value + 3.0) / 6.0).clamp(0.0, 1.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold)),
+            Text("${value.toStringAsFixed(2)}σ", style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Stack(
+          children: [
+            Container(height: 4, decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(2))),
+            FractionallySizedBox(
+              widthFactor: normalized,
+              child: Container(height: 4, decoration: BoxDecoration(color: color.withOpacity(0.8), borderRadius: BorderRadius.circular(2))),
+            ),
+            // Orta çizgi (0σ)
+            Align(alignment: const Alignment(0, 0), child: Container(width: 1, height: 4, color: Colors.white30)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // 2. LATENCY HEATMAP WIDGET (SLA Monitoring)
+  Widget _buildLatencyHeatmap(List<ExecutionReport> reports) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("SLA HEALTH (LAST 32)", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 3,
+          runSpacing: 3,
+          children: reports.take(32).map((r) {
+            Color c = Colors.greenAccent;
+            if (r.latencyMs > 50) c = Colors.redAccent;
+            else if (r.latencyMs > 25) c = Colors.orangeAccent;
+            return Container(width: 8, height: 8, decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(1)));
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
 }
 
 class PnLChartPainter extends CustomPainter {
