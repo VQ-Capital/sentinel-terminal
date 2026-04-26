@@ -1,3 +1,4 @@
+// ========== DOSYA: sentinel-terminal/lib/features/dashboard/widgets/charts_widget.dart ==========
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,45 +10,40 @@ class ZScoreRadarPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final vectors = ref.watch(zScoreProvider);
-    final reports = ref.watch(reportListProvider); // SLA için raporları dinle
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF18181B),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blueAccent.withOpacity(0.2), width: 1),
+        border: Border.all(color: Colors.blueAccent.withOpacity(0.3), width: 1.5),
+        boxShadow: [BoxShadow(color: Colors.blueAccent.withOpacity(0.05), blurRadius: 20)]
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ÜST BAŞLIK VE SLA BİLGİSİ
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("V4 OMNISCIENCE REAL-TIME RADAR", 
-                style: TextStyle(color: Colors.blueAccent, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
-              _buildSlaMiniTracker(reports), // Sağ üste minik SLA özeti
+              const Text("🧠 AI OMNISCIENCE RADARI", style: TextStyle(color: Colors.blueAccent, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
+              Tooltip(
+                message: "Yapay zeka piyasayı 4 boyutta analiz eder.\nBarlar sağa kayarsa ALIM (Yeşil/Mavi),\nsola kayarsa SATIŞ (Kırmızı) baskısı vardır.",
+                child: Icon(Icons.help_outline, color: Colors.blueAccent.withOpacity(0.5), size: 16),
+              )
             ],
           ),
-          const SizedBox(height: 16),
+          const Divider(color: Colors.white10, height: 24),
           
           if (vectors.isEmpty) 
-            const Expanded(child: Center(child: Text("HFT Veri Akışı Bekleniyor...", style: TextStyle(color: Colors.white24))))
+            const Expanded(child: Center(child: CircularProgressIndicator(color: Colors.blueAccent)))
           else 
             Expanded(
-              child: GridView.builder( // Daha iyi alan kullanımı için Grid!
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // Yan yana iki coin
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.8,
-                ),
+              child: ListView.separated(
                 itemCount: vectors.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final symbol = vectors.keys.elementAt(index);
-                  final vec = vectors[symbol]!;
-                  return _buildDetailedCoinCard(symbol, vec);
+                  return _buildCoinRadarCard(symbol, vectors[symbol]!);
                 },
               ),
             ),
@@ -56,180 +52,101 @@ class ZScoreRadarPanel extends ConsumerWidget {
     );
   }
 
-  // Minik SLA Isı Haritası (Radar içine gömülü)
-  Widget _buildSlaMiniTracker(List<dynamic> reports) {
-    return Row(
-      children: [
-        const Text("SLA:", style: TextStyle(color: Colors.white38, fontSize: 9)),
-        const SizedBox(width: 6),
-        ...reports.take(10).map((r) {
-          Color c = r.latencyMs > 50 ? Colors.redAccent : (r.latencyMs > 25 ? Colors.orangeAccent : Colors.greenAccent);
-          return Container(width: 6, height: 6, margin: const EdgeInsets.only(left: 2), decoration: BoxDecoration(color: c, shape: BoxShape.circle));
-        }),
-      ],
-    );
-  }  
-
-  Widget _buildDetailedCoinCard(String symbol, dynamic vec) {
+  Widget _buildCoinRadarCard(String symbol, dynamic vec) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          Text(symbol, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-          _buildZLine("VEL", vec.priceVelocity, Colors.blueAccent),
-          _buildZLine("IMB", vec.volumeImbalance, Colors.orangeAccent),
-          _buildZLine("SENT", vec.sentimentScore, Colors.purpleAccent),
-          _buildZLine("URG", vec.chainUrgency, Colors.greenAccent),
-        ],
-      ),
-    );
-  }  
-
-  Widget _buildZLine(String label, double value, Color color) {
-    final double normalized = ((value + 3.0) / 6.0).clamp(0.0, 1.0);
-    return Row(
-      children: [
-        SizedBox(width: 28, child: Text(label, style: const TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.bold))),
-        Expanded(
-          child: Stack(
-            children: [
-              Container(height: 4, decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(2))),
-              FractionallySizedBox(
-                widthFactor: normalized,
-                child: Container(height: 4, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text("${value >= 0 ? '+' : ''}${value.toStringAsFixed(1)}", 
-          style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
-      ],
-    );
-  }
-}
-
-  Widget _buildCoinRadarCard(String symbol, dynamic vec) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.02),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(symbol, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-              const Icon(Icons.bolt, color: Colors.blueAccent, size: 12),
+              Text(symbol.replaceAll('USDT', ''), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              _buildGeneralStatusBadge(vec.priceVelocity), 
             ],
           ),
-          const SizedBox(height: 8),
-          _buildZRow("VEL", vec.priceVelocity, Colors.blueAccent, "Fiyat Hızı"),
-          _buildZRow("IMB", vec.volumeImbalance, Colors.orangeAccent, "Tahta Dengesi"),
-          _buildZRow("SNT", vec.sentimentScore, Colors.purpleAccent, "NLP Duygu"),
-          _buildZRow("URG", vec.chainUrgency, Colors.greenAccent, "Zincir Aciliyeti"),
+          const SizedBox(height: 12),
+          _buildZRow("HIZ (VEL)", vec.priceVelocity, Colors.blueAccent, "Fiyat İvmesi (Price Velocity)"),
+          _buildZRow("TAHTA (IMB)", vec.volumeImbalance, Colors.orangeAccent, "Emir Defteri Dengesizliği (Orderbook Imbalance)"),
+          _buildZRow("DUYGU (NLP)", vec.sentimentScore, Colors.purpleAccent, "Yapay Zeka Haber Duygusu (Neural Sentiment)"),
+          _buildZRow("ZİNCİR (URG)", vec.chainUrgency, Colors.greenAccent, "Mempool Ağ Tıkanıklığı (On-Chain Urgency)"),
         ],
       ),
     );
   }
 
+  Widget _buildGeneralStatusBadge(double velocity) {
+    String text = "NÖTR";
+    Color color = Colors.white54;
+    
+    if (velocity > 1.5) { text = "GÜÇLÜ ALIM"; color = Colors.greenAccent; }
+    else if (velocity > 0.5) { text = "ALIM BASKISI"; color = Colors.green; }
+    else if (velocity < -1.5) { text = "PANİK SATIŞ"; color = Colors.redAccent; }
+    else if (velocity < -0.5) { text = "SATIŞ BASKISI"; color = Colors.red; }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: color.withOpacity(0.5))),
+      child: Text(text, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
+    );
+  }
+
   Widget _buildZRow(String label, double value, Color color, String tooltip) {
-    final double normalized = ((value + 3.0) / 6.0).clamp(0.0, 1.0);
+    final bool isPositive = value >= 0;
+
     return Tooltip(
       message: tooltip,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           children: [
-            SizedBox(width: 25, child: Text(label, style: const TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.bold))),
+            SizedBox(width: 60, child: Text(label, style: const TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.bold))),
             Expanded(
-              child: Stack(
-                children: [
-                  Container(height: 5, decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(2))),
-                  FractionallySizedBox(
-                    widthFactor: normalized,
-                    child: Container(
-                      height: 5, 
-                      decoration: BoxDecoration(
-                        color: color, 
-                        borderRadius: BorderRadius.circular(2),
-                        boxShadow: [BoxShadow(color: color.withOpacity(0.3), blurRadius: 2)]
-                      ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  final center = width / 2;
+                  final barWidth = (value.abs() / 3.0).clamp(0.0, 1.0) * center;
+                  
+                  return SizedBox(
+                    height: 12,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(height: 4, decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(2))),
+                        Container(width: 2, height: 12, color: Colors.white54),
+                        Positioned(
+                          left: isPositive ? center : center - barWidth,
+                          width: barWidth,
+                          child: Container(
+                            height: 4, 
+                            decoration: BoxDecoration(color: isPositive ? color : Colors.redAccent, borderRadius: BorderRadius.circular(2))
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Align(alignment: Alignment.center, child: Container(width: 1, height: 5, color: Colors.white24)),
-                ],
+                  );
+                }
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
             SizedBox(
-              width: 40,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerRight,
-                child: Text("${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)}σ", 
-                  style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
-              ),
+              width: 50,
+              child: Text("${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)}σ", 
+                textAlign: TextAlign.right,
+                style: TextStyle(color: isPositive ? color : Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
             ),
           ],
         ),
       ),
     );
   }
-
-
-// --- SLA HEALTH PANELİNİ DE KÜÇÜLTELİM Kİ TAŞMASIN ---
-class SlaHeatmapPanel extends ConsumerWidget {
-  const SlaHeatmapPanel({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final reports = ref.watch(reportListProvider);
-    
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF18181B),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min, // ÖNEMLİ: Taşı önlemek için
-        children: [
-          const Text("SLA HEALTH (LAST 32)", style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          SingleChildScrollView( // Scroll eklendi
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: reports.take(32).map((r) {
-                Color c = Colors.greenAccent;
-                if (r.latencyMs > 50) c = Colors.redAccent;
-                else if (r.latencyMs > 25) c = Colors.orangeAccent;
-                return Container(
-                  margin: const EdgeInsets.only(right: 3),
-                  width: 8, height: 8, 
-                  decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(1)),
-                );
-              }).toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
-// --- PNL CHART KAPSAYICI ---
+
 class PnlChartWidget extends StatelessWidget {
   final List<double> history;
   final double currentPnl;
@@ -260,7 +177,6 @@ class PnlChartWidget extends StatelessWidget {
   }
 }
 
-// --- LATENCY CHART KAPSAYICI ---
 class LatencyChartWidget extends StatelessWidget {
   final List<int> latencies;
   final int avgLatency;
@@ -279,14 +195,13 @@ class LatencyChartWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // --- DEĞİŞİKLİK BURADA: Flexible eklendi ---
               const Flexible(
                 child: Text("SLA WATCHDOG (LATENCY)", 
                   style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
-                  overflow: TextOverflow.ellipsis, // Sığmazsa üç nokta koy
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 4), // Küçük bir boşluk
+              const SizedBox(width: 4),
               Text("${avgLatency}ms", style: TextStyle(color: latColor, fontSize: 16, fontWeight: FontWeight.w900, fontFamily: 'monospace')),
             ],
           ),
@@ -298,7 +213,47 @@ class LatencyChartWidget extends StatelessWidget {
   }
 }
 
-// Custom Painter Sınıfları (Eskisiyle aynı)
+class SlaHeatmapPanel extends ConsumerWidget {
+  const SlaHeatmapPanel({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reports = ref.watch(reportListProvider);
+    
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF18181B),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text("SLA HEALTH (LAST 32)", style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: reports.take(32).map((r) {
+                Color c = Colors.greenAccent;
+                if (r.latencyMs > 50) c = Colors.redAccent;
+                else if (r.latencyMs > 25) c = Colors.orangeAccent;
+                return Container(
+                  margin: const EdgeInsets.only(right: 3),
+                  width: 8, height: 8, 
+                  decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(1)),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class PnLChartPainter extends CustomPainter {
   final List<double> history;
   PnLChartPainter(this.history);

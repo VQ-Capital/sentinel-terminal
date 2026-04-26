@@ -14,7 +14,7 @@ class VQTerminalApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Sentinel',
+      title: 'sentinel-quant',
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF09090B),
         appBarTheme: const AppBarTheme(

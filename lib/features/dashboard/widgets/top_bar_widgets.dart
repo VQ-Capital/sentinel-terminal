@@ -1,4 +1,4 @@
-// lib/features/dashboard/widgets/top_bar_widgets.dart
+// ========== DOSYA: sentinel-terminal/lib/features/dashboard/widgets/top_bar_widgets.dart ==========
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/terminal_stream.dart';
@@ -10,14 +10,12 @@ class TerminalAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Bağlantı durumunu provider üzerinden anlık dinliyoruz
     final isConnected = ref.watch(connectionStateProvider);
 
     return AppBar(
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Bağlantı İkonu
           Icon(
             isConnected ? Icons.lan : Icons.lan_outlined,
             color: isConnected ? Colors.greenAccent : Colors.redAccent,
@@ -32,19 +30,17 @@ class TerminalAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
           ),
           const SizedBox(width: 16),
-          // BURADAKİ HATA DÜZELTİLDİ: Fonksiyon parametreyi artık kabul ediyor.
           _buildSystemStatusBadge(isDefensiveMode),
         ],
       ),
     );
   }
 
-  // Hata veren kısım düzeltildi: bool isDefensive parametresi eklendi.
   Widget _buildSystemStatusBadge(bool isDefensive) {
     return Tooltip(
       message: isDefensive 
-          ? "SELF-HEALING AKTİF: Risk motoru defansif moda geçti." 
-          : "SİSTEM STABİL: HFT algoritmaları aktif.",
+          ? "SELF-HEALING AKTİF: Kasa koruması devrede. Risk motoru kaldıracı düşürdü." 
+          : "SİSTEM STABİL: HFT algoritmaları normal parametrelerde aktif.",
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
@@ -117,69 +113,106 @@ class StatsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     if (isDesktop) {
       return SizedBox(
-        height: 100,
+        height: 100, // 🔥 KRİTİK DÜZELTME: RenderFlex hatasını önleyen yükseklik kısıtlaması
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: _buildCards(),
+          children: [
+            Expanded(child: _buildBalanceCard()),
+            const SizedBox(width: 12),
+            Expanded(child: _buildRealizedCard()),
+            const SizedBox(width: 12),
+            Expanded(child: _buildFloatingCard()),
+            const SizedBox(width: 12),
+            Expanded(child: _buildWinRateCard()),
+            const SizedBox(width: 12),
+            Expanded(child: _buildSlaCard()),
+            const SizedBox(width: 12),
+            Expanded(child: _buildKillSwitch(context)),
+          ],
         ),
       );
     } else {
       return GridView.count(
         shrinkWrap: true,
         crossAxisCount: MediaQuery.of(context).size.width > 500 ? 3 : 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 1.7,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1.8,
         physics: const NeverScrollableScrollPhysics(),
-        children: _buildCards(),
+        // 🔥 KRİTİK DÜZELTME: GridView içine Expanded koyulamaz, doğrudan widget verilmeli.
+        children: [
+          _buildBalanceCard(),
+          _buildRealizedCard(),
+          _buildFloatingCard(),
+          _buildWinRateCard(),
+          _buildSlaCard(),
+          _buildKillSwitch(context),
+        ],
       );
     }
   }
 
-  List<Widget> _buildCards() {
-    return [
-      isDesktop ? Expanded(child: _statCard("CÜZDAN", "\$${metrics.displayBalance.toStringAsFixed(3)}", Colors.white, "Net Bakiye")) : _statCard("CÜZDAN", "\$${metrics.displayBalance.toStringAsFixed(3)}", Colors.white, "Net Bakiye"),
-      if (isDesktop) const SizedBox(width: 12),
-      isDesktop ? Expanded(child: _statCard("REALIZED", "\$${metrics.displayRealizedPnL.toStringAsFixed(3)}", metrics.displayRealizedPnL >= 0 ? Colors.greenAccent : Colors.redAccent, "Kapanan K/Z")) : _statCard("REALIZED", "\$${metrics.displayRealizedPnL.toStringAsFixed(3)}", metrics.displayRealizedPnL >= 0 ? Colors.greenAccent : Colors.redAccent, "Kapanan K/Z"),
-      if (isDesktop) const SizedBox(width: 12),
-      isDesktop ? Expanded(child: _statCard("FLOATING", "\$${metrics.displayUnrealizedPnL.toStringAsFixed(3)}", metrics.displayUnrealizedPnL >= 0 ? Colors.greenAccent : Colors.redAccent, "Açık İşlemler")) : _statCard("FLOATING", "\$${metrics.displayUnrealizedPnL.toStringAsFixed(3)}", metrics.displayUnrealizedPnL >= 0 ? Colors.greenAccent : Colors.redAccent, "Açık İşlemler"),
-      if (isDesktop) const SizedBox(width: 12),
-      isDesktop ? Expanded(child: _statCard("WIN RATE", "%${metrics.winRate.toStringAsFixed(1)}", metrics.winRate >= 50 ? Colors.blueAccent : Colors.orangeAccent, "Başarı Oranı")) : _statCard("WIN RATE", "%${metrics.winRate.toStringAsFixed(1)}", metrics.winRate >= 50 ? Colors.blueAccent : Colors.orangeAccent, "Başarı Oranı"),
-      if (isDesktop) const SizedBox(width: 12),
-      isDesktop ? Expanded(child: _statCard("AĞ PING", "${metrics.avgLatency}ms", metrics.avgLatency > 50 ? Colors.redAccent : Colors.greenAccent, "SLA Limit: 50ms")) : _statCard("AĞ PING", "${metrics.avgLatency}ms", metrics.avgLatency > 50 ? Colors.redAccent : Colors.greenAccent, "SLA Limit: 50ms"),
-      if (isDesktop) const SizedBox(width: 12),
-      isDesktop ? Expanded(child: _killSwitch()) : _killSwitch(),
-    ];
-  }
+  Widget _buildBalanceCard() => _smartStatCard(title: "NET BAKİYE", value: "\$${metrics.displayBalance.toStringAsFixed(2)}", color: Colors.white, sub: "Cüzdan Durumu", tooltip: "Sistemin sahip olduğu, işlem yapılabilir nakit miktarı.");
+  Widget _buildRealizedCard() => _smartStatCard(title: "REALIZED PnL", value: "${metrics.displayRealizedPnL >= 0 ? '+' : ''}\$${metrics.displayRealizedPnL.toStringAsFixed(2)}", color: metrics.displayRealizedPnL >= 0 ? Colors.greenAccent : Colors.redAccent, sub: "Kapanan İşlemler", tooltip: "Kapatılmış işlemlerden elde edilen net kâr/zarar.");
+  Widget _buildFloatingCard() => _smartStatCard(title: "FLOATING PnL", value: "${metrics.displayUnrealizedPnL >= 0 ? '+' : ''}\$${metrics.displayUnrealizedPnL.toStringAsFixed(2)}", color: metrics.displayUnrealizedPnL >= 0 ? Colors.greenAccent : Colors.redAccent, sub: "Açık İşlemler", tooltip: "Anlık açık pozisyonların piyasa fiyatına göre kâr/zarar durumu.");
+  Widget _buildWinRateCard() => _smartStatCard(title: "BAŞARI (WIN %)", value: "%${metrics.winRate.toStringAsFixed(1)}", color: metrics.winRate >= 50 ? Colors.blueAccent : Colors.orangeAccent, sub: "İsabet Oranı", tooltip: "Yapay zekanın kârla kapattığı işlemlerin oranı.");
+  Widget _buildSlaCard() => _smartStatCard(title: "SLA PING", value: "${metrics.avgLatency}ms", color: metrics.avgLatency > 50 ? Colors.redAccent : Colors.greenAccent, sub: "Borsa Gecikmesi", tooltip: "Emrin borsaya gidiş süresi. >50ms ise sistem durur.");
 
-  Widget _statCard(String title, String value, Color color, String sub) {
-    return Container(
-      decoration: BoxDecoration(color: const Color(0xFF18181B), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white.withOpacity(0.05))),
-      padding: const EdgeInsets.all(12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(title, style: const TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-          const SizedBox(height: 4),
-          FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.w900, fontFamily: 'monospace'))),
-          const SizedBox(height: 4),
-          Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white38, fontSize: 9)),
-        ],
+  Widget _smartStatCard({required String title, required String value, required Color color, required String sub, required String tooltip}) {
+    return Tooltip(
+      message: tooltip,
+      waitDuration: const Duration(milliseconds: 300),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF18181B),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          boxShadow: [BoxShadow(color: color.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(title, style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                const Icon(Icons.info_outline, color: Colors.white24, size: 12),
+              ],
+            ),
+            const Spacer(),
+            FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.w900, fontFamily: 'monospace'))),
+            const SizedBox(height: 2),
+            Text(sub, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _killSwitch() {
-    return Builder(builder: (context) => InkWell(
-      onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kill Switch İletildi!"), backgroundColor: Colors.redAccent)),
-      child: Container(
-        decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.red.withOpacity(0.5), width: 1.5)),
-        child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.power_settings_new, color: Colors.redAccent, size: 26), SizedBox(height: 6),
-          Text("KILL SWITCH", style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1)),
-        ]),
+  Widget _buildKillSwitch(BuildContext context) {
+    return Tooltip(
+      message: "KILL SWITCH (Acil Durum)\nTüm işlemleri durdurmak için BASILI TUTUN.",
+      waitDuration: const Duration(milliseconds: 300),
+      child: InkWell(
+        onLongPress: () {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("🚨 KILL SWITCH TETİKLENDİ: Tüm İşlemler Durduruluyor!"), backgroundColor: Colors.redAccent));
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [Colors.red.withOpacity(0.1), Colors.red.withOpacity(0.2)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+            borderRadius: BorderRadius.circular(8), 
+            border: Border.all(color: Colors.redAccent.withOpacity(0.5), width: 1.5)
+          ),
+          child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(Icons.power_settings_new, color: Colors.redAccent, size: 24), 
+            SizedBox(height: 4),
+            Text("KILL SWITCH", style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1)),
+            Text("(Basılı Tut)", style: TextStyle(color: Colors.redAccent, fontSize: 8)),
+          ]),
+        ),
       ),
-    ));
+    );
   }
 }
