@@ -380,6 +380,7 @@ class MarketStateVector extends $pb.GeneratedMessage {
     $core.double? volumeImbalance,
     $core.double? sentimentScore,
     $core.Iterable<$core.double>? embeddings,
+    $core.double? chainUrgency,
   }) {
     final result = create();
     if (symbol != null) result.symbol = symbol;
@@ -389,6 +390,7 @@ class MarketStateVector extends $pb.GeneratedMessage {
     if (volumeImbalance != null) result.volumeImbalance = volumeImbalance;
     if (sentimentScore != null) result.sentimentScore = sentimentScore;
     if (embeddings != null) result.embeddings.addAll(embeddings);
+    if (chainUrgency != null) result.chainUrgency = chainUrgency;
     return result;
   }
 
@@ -414,6 +416,7 @@ class MarketStateVector extends $pb.GeneratedMessage {
     ..aD(6, _omitFieldNames ? '' : 'sentimentScore')
     ..p<$core.double>(
         7, _omitFieldNames ? '' : 'embeddings', $pb.PbFieldType.KD)
+    ..aD(8, _omitFieldNames ? '' : 'chainUrgency')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -493,6 +496,109 @@ class MarketStateVector extends $pb.GeneratedMessage {
   /// Qdrant'a gömülecek ham vektör dizisi
   @$pb.TagNumber(7)
   $pb.PbList<$core.double> get embeddings => $_getList(6);
+
+  @$pb.TagNumber(8)
+  $core.double get chainUrgency => $_getN(7);
+  @$pb.TagNumber(8)
+  set chainUrgency($core.double value) => $_setDouble(7, value);
+  @$pb.TagNumber(8)
+  $core.bool hasChainUrgency() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearChainUrgency() => $_clearField(8);
+}
+
+/// ✅ YENİ EKLENEN PROTOKOL
+/// Mempool ve On-chain aktivitesini ölçen "İşlem Öncesi" (Pre-Trade) sinyal.
+/// sentinel-chain-ingest servisi üretir, NATS "chain.urgency.*" kanalına basar.
+class ChainUrgencyEvent extends $pb.GeneratedMessage {
+  factory ChainUrgencyEvent({
+    $core.String? symbol,
+    $core.double? urgencyScore,
+    $core.double? networkFee,
+    $fixnum.Int64? timestamp,
+  }) {
+    final result = create();
+    if (symbol != null) result.symbol = symbol;
+    if (urgencyScore != null) result.urgencyScore = urgencyScore;
+    if (networkFee != null) result.networkFee = networkFee;
+    if (timestamp != null) result.timestamp = timestamp;
+    return result;
+  }
+
+  ChainUrgencyEvent._();
+
+  factory ChainUrgencyEvent.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ChainUrgencyEvent.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ChainUrgencyEvent',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'sentinel.market.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'symbol')
+    ..aD(2, _omitFieldNames ? '' : 'urgencyScore')
+    ..aD(3, _omitFieldNames ? '' : 'networkFee')
+    ..aInt64(4, _omitFieldNames ? '' : 'timestamp')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ChainUrgencyEvent clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ChainUrgencyEvent copyWith(void Function(ChainUrgencyEvent) updates) =>
+      super.copyWith((message) => updates(message as ChainUrgencyEvent))
+          as ChainUrgencyEvent;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ChainUrgencyEvent create() => ChainUrgencyEvent._();
+  @$core.override
+  ChainUrgencyEvent createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ChainUrgencyEvent getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ChainUrgencyEvent>(create);
+  static ChainUrgencyEvent? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get symbol => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set symbol($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSymbol() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSymbol() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.double get urgencyScore => $_getN(1);
+  @$pb.TagNumber(2)
+  set urgencyScore($core.double value) => $_setDouble(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasUrgencyScore() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearUrgencyScore() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.double get networkFee => $_getN(2);
+  @$pb.TagNumber(3)
+  set networkFee($core.double value) => $_setDouble(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasNetworkFee() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearNetworkFee() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $fixnum.Int64 get timestamp => $_getI64(3);
+  @$pb.TagNumber(4)
+  set timestamp($fixnum.Int64 value) => $_setInt64(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasTimestamp() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearTimestamp() => $_clearField(4);
 }
 
 const $core.bool _omitFieldNames =

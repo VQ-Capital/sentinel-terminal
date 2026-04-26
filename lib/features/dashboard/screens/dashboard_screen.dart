@@ -50,22 +50,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
-                                    Expanded(flex: 3, child: PnlChartWidget(history: metrics.pnlHistory, currentPnl: metrics.displayRealizedPnL)),
+                                    // 1. PNL CHART (Flex 3'ten 2.5'e çekildi, Radara yer açıldı)
+                                    Expanded(flex: 25, child: PnlChartWidget(history: metrics.pnlHistory, currentPnl: metrics.displayRealizedPnL)),
                                     const SizedBox(width: 16),
-                                    Expanded(
-                                      flex: 2, 
-                                      child: Column(
-                                        children: const [
-                                          Expanded(flex: 6, child: ZScoreRadarPanel()),
-                                          SizedBox(height: 16),
-                                          Expanded(flex: 4, child: SlaHeatmapPanel()),
-                                        ],
-                                      )
+                                    
+                                    // 2. MERKEZİ PANEL: OMNISCIENCE RADAR (Flex 2'den 4.5'e çıkarıldı - GENİŞLETİLDİ)
+                                    const Expanded(
+                                      flex: 45, 
+                                      child: ZScoreRadarPanel(), // SLA Artık Bunun İçinde Olacak!
                                     ),
                                     const SizedBox(width: 16),
-                                    Expanded(flex: 2, child: LatencyChartWidget(latencies: metrics.recentLatencies, avgLatency: metrics.avgLatency)),
+
+                                    // 3. SLA WATCHDOG (LATENCY) (Flex 2)
+                                    Expanded(flex: 20, child: LatencyChartWidget(latencies: metrics.recentLatencies, avgLatency: metrics.avgLatency)),
                                     const SizedBox(width: 16),
-                                    Expanded(flex: 3, child: OpenPositionsPanel(positions: metrics.positions, avgPrices: metrics.avgPrices)),
+
+                                    // 4. POSITIONS (Flex 3)
+                                    Expanded(flex: 30, child: OpenPositionsPanel(positions: metrics.positions, avgPrices: metrics.avgPrices)),
                                   ],
                                 ),
                               ),

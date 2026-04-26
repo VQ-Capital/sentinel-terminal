@@ -107,6 +107,7 @@ const MarketStateVector$json = {
     {'1': 'volume_imbalance', '3': 5, '4': 1, '5': 1, '10': 'volumeImbalance'},
     {'1': 'sentiment_score', '3': 6, '4': 1, '5': 1, '10': 'sentimentScore'},
     {'1': 'embeddings', '3': 7, '4': 3, '5': 1, '10': 'embeddings'},
+    {'1': 'chain_urgency', '3': 8, '4': 1, '5': 1, '10': 'chainUrgency'},
   ],
 };
 
@@ -117,4 +118,21 @@ final $typed_data.Uint8List marketStateVectorDescriptor = $convert.base64Decode(
     'A1INd2luZG93RW5kVGltZRIlCg5wcmljZV92ZWxvY2l0eRgEIAEoAVINcHJpY2VWZWxvY2l0eR'
     'IpChB2b2x1bWVfaW1iYWxhbmNlGAUgASgBUg92b2x1bWVJbWJhbGFuY2USJwoPc2VudGltZW50'
     'X3Njb3JlGAYgASgBUg5zZW50aW1lbnRTY29yZRIeCgplbWJlZGRpbmdzGAcgAygBUgplbWJlZG'
-    'Rpbmdz');
+    'RpbmdzEiMKDWNoYWluX3VyZ2VuY3kYCCABKAFSDGNoYWluVXJnZW5jeQ==');
+
+@$core.Deprecated('Use chainUrgencyEventDescriptor instead')
+const ChainUrgencyEvent$json = {
+  '1': 'ChainUrgencyEvent',
+  '2': [
+    {'1': 'symbol', '3': 1, '4': 1, '5': 9, '10': 'symbol'},
+    {'1': 'urgency_score', '3': 2, '4': 1, '5': 1, '10': 'urgencyScore'},
+    {'1': 'network_fee', '3': 3, '4': 1, '5': 1, '10': 'networkFee'},
+    {'1': 'timestamp', '3': 4, '4': 1, '5': 3, '10': 'timestamp'},
+  ],
+};
+
+/// Descriptor for `ChainUrgencyEvent`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List chainUrgencyEventDescriptor = $convert.base64Decode(
+    'ChFDaGFpblVyZ2VuY3lFdmVudBIWCgZzeW1ib2wYASABKAlSBnN5bWJvbBIjCg11cmdlbmN5X3'
+    'Njb3JlGAIgASgBUgx1cmdlbmN5U2NvcmUSHwoLbmV0d29ya19mZWUYAyABKAFSCm5ldHdvcmtG'
+    'ZWUSHAoJdGltZXN0YW1wGAQgASgDUgl0aW1lc3RhbXA=');
