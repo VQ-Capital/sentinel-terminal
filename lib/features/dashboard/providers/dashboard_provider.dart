@@ -3,38 +3,31 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/terminal_stream.dart';
 
+// Başlangıç bakiyesini ilk gelen veriden yakalamak için global değişken (veya ayrı bir provider)
+double? _capturedInitialBalance;
+
 class DashboardMetrics {
-  final double displayBalance;     // Gerçekleşen (Balance)
-  final double displayEquity;      // Yüzen Dahil (Equity)
+  final double displayBalance;
+  final double displayEquity;
   final double displayRealizedPnL;
   final double displayUnrealizedPnL;
   final double winRate;
   final int avgLatency;
   final bool isDefensiveMode;
-  final List<double> balanceHistory; // Mavi Çizgi
-  final List<double> equityHistory;  // Sarı Çizgi
-  final List<int> recentLatencies;   // 🚀 DÜZELTİLDİ: Geri eklendi
+  final List<double> balanceHistory;
+  final List<double> equityHistory;
+  final List<int> recentLatencies;
   final Map<String, double> positions;
   final Map<String, double> avgPrices;
-  
   final double maxDrawdownPct;
   final double sharpeRatio;
 
   DashboardMetrics({
-    required this.displayBalance, 
-    required this.displayEquity, 
-    required this.displayRealizedPnL,
-    required this.displayUnrealizedPnL, 
-    required this.winRate, 
-    required this.avgLatency,
-    required this.isDefensiveMode, 
-    required this.balanceHistory, 
-    required this.equityHistory,
-    required this.recentLatencies,   // 🚀 DÜZELTİLDİ
-    required this.positions, 
-    required this.avgPrices, 
-    required this.maxDrawdownPct, 
-    required this.sharpeRatio,
+    required this.displayBalance, required this.displayEquity, required this.displayRealizedPnL,
+    required this.displayUnrealizedPnL, required this.winRate, required this.avgLatency,
+    required this.isDefensiveMode, required this.balanceHistory, required this.equityHistory,
+    required this.recentLatencies, required this.positions, required this.avgPrices,
+    required this.maxDrawdownPct, required this.sharpeRatio,
   });
 }
 
@@ -43,7 +36,14 @@ final dashboardMetricsProvider = Provider<DashboardMetrics>((ref) {
   final marketPrices = ref.watch(marketDataNotifierProvider);
   final equityData = ref.watch(equityProvider);
 
-  const double initialBalance = 100000.00; // 100K Kurumsal Bakiye
+  // 🚀 DÜZELTME: Sabit 100K değeri kaldırıldı!
+  // Eğer henüz veri gelmediyse 0, geldiyse ilk gelen bakiyeyi baz alıyoruz.
+  if (_capturedInitialBalance == null && equityData != null) {
+    _capturedInitialBalance = equityData.availableMarginUsd;
+  }
+  
+  final double initialBalance = _capturedInitialBalance ?? (equityData?.availableMarginUsd ?? 0.0);
+
   double localBalance = initialBalance;
   List<double> balanceHistory = [initialBalance];
   List<double> equityHistory = [initialBalance];
@@ -52,7 +52,6 @@ final dashboardMetricsProvider = Provider<DashboardMetrics>((ref) {
   int closedTrades = 0; 
   int winningTrades = 0;
 
-  // Latency hesaplamaları
   List<int> recentLatencies = reports.take(100).map((r) => r.latencyMs.toInt()).toList().reversed.toList();
   int avgLatency = recentLatencies.isEmpty ? 0 : (recentLatencies.reduce((a, b) => a + b) / recentLatencies.length).round();
 
@@ -90,17 +89,20 @@ final dashboardMetricsProvider = Provider<DashboardMetrics>((ref) {
 
   double winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0.0;
   
+  // Realized PnL: Mevcut Bakiye - Başlangıç Bakiyesi
+  double currentBalance = equityData?.availableMarginUsd ?? localBalance;
+
   return DashboardMetrics(
-    displayBalance: equityData?.availableMarginUsd ?? localBalance,
-    displayEquity: equityData?.totalEquityUsd ?? localBalance,
-    displayRealizedPnL: (equityData?.availableMarginUsd ?? localBalance) - initialBalance,
+    displayBalance: currentBalance,
+    displayEquity: equityData?.totalEquityUsd ?? currentBalance,
+    displayRealizedPnL: currentBalance - initialBalance, // 🚀 ARTIK DİNAMİK: 1000 - 1000 = 0
     displayUnrealizedPnL: equityData?.totalUnrealizedPnl ?? 0.0,
     winRate: winRate,
     avgLatency: avgLatency,
     isDefensiveMode: (equityData?.maxDrawdownPct ?? 0.0) > 15.0,
     balanceHistory: balanceHistory,
     equityHistory: equityHistory,
-    recentLatencies: recentLatencies, // 🚀 DÜZELTİLDİ
+    recentLatencies: recentLatencies,
     positions: positions,
     avgPrices: avgPrices,
     maxDrawdownPct: equityData?.maxDrawdownPct ?? 0.0,
