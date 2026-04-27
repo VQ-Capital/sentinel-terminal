@@ -1,6 +1,8 @@
 // ========== DOSYA: sentinel-terminal/lib/features/dashboard/widgets/top_bar_widgets.dart ==========
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import '../../../core/network/terminal_stream.dart';
 import '../providers/dashboard_provider.dart';
 
@@ -100,12 +102,13 @@ class StatsPanel extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(child: _buildBalanceCard()), const SizedBox(width: 12),
-            Expanded(child: _buildEquityCard()), const SizedBox(width: 12),
-            Expanded(child: _buildDrawdownCard()), const SizedBox(width: 12),
-            Expanded(child: _buildSharpeCard()), const SizedBox(width: 12),
-            Expanded(child: _buildSlaCard()), const SizedBox(width: 12),
-            Expanded(child: _buildKillSwitch(context)),
+            Expanded(flex: 2, child: _buildBalanceCard()), const SizedBox(width: 12),
+            Expanded(flex: 2, child: _buildEquityCard()), const SizedBox(width: 12),
+            Expanded(flex: 2, child: _buildDrawdownCard()), const SizedBox(width: 12),
+            Expanded(flex: 2, child: _buildSharpeCard()), const SizedBox(width: 12),
+            Expanded(flex: 2, child: _buildSlaCard()), const SizedBox(width: 12),
+            Expanded(flex: 1, child: _buildDiagnoseButton(context)), const SizedBox(width: 8), // 🔥 YENİ
+            Expanded(flex: 2, child: _buildKillSwitch(context)),
           ],
         ),
       );
@@ -113,18 +116,18 @@ class StatsPanel extends StatelessWidget {
       return GridView.count(
         shrinkWrap: true, crossAxisCount: 2, crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 1.8,
         physics: const NeverScrollableScrollPhysics(),
-        children: [_buildBalanceCard(), _buildEquityCard(), _buildDrawdownCard(), _buildSharpeCard(), _buildSlaCard(), _buildKillSwitch(context)],
+        children: [_buildBalanceCard(), _buildEquityCard(), _buildDrawdownCard(), _buildSharpeCard(), _buildSlaCard(), _buildDiagnoseButton(context), _buildKillSwitch(context)],
       );
     }
   }
 
-  Widget _buildBalanceCard() => _smartStatCard(title: "GERÇEKLEŞEN (BAL)", value: "\$${metrics.displayBalance.toStringAsFixed(0)}", color: Colors.white, sub: "Kapalı Pozisyonlar", tooltip: "Kapatılmış işlemler sonucu oluşan net nakit bakiye.");
-  Widget _buildEquityCard() => _smartStatCard(title: "ÖZSERMAYE (EQT)", value: "\$${metrics.displayEquity.toStringAsFixed(0)}", color: Colors.yellowAccent, sub: "Yüzen Dahil", tooltip: "Açık pozisyonların kâr/zararı dahil kasanın anlık toplam değeri.");
+  // 🔥 CERRAHİ: toStringAsFixed(0) olan yerler toStringAsFixed(2) yapıldı! Artık kuruşlar görünecek.
+  Widget _buildBalanceCard() => _smartStatCard(title: "GERÇEKLEŞEN (BAL)", value: "\$${metrics.displayBalance.toStringAsFixed(2)}", color: Colors.white, sub: "Kapalı Pozisyonlar", tooltip: "Kapatılmış işlemler sonucu oluşan net nakit bakiye.");
+  Widget _buildEquityCard() => _smartStatCard(title: "ÖZSERMAYE (EQT)", value: "\$${metrics.displayEquity.toStringAsFixed(2)}", color: Colors.yellowAccent, sub: "Yüzen Dahil", tooltip: "Açık pozisyonların kâr/zararı dahil kasanın anlık toplam değeri.");
   Widget _buildDrawdownCard() => _smartStatCard(title: "MAX DRAWDOWN", value: "%${metrics.maxDrawdownPct.toStringAsFixed(2)}", color: metrics.maxDrawdownPct > 10 ? Colors.redAccent : Colors.greenAccent, sub: "En Yüksek Kayıp", tooltip: "Zirve noktadan itibaren kasanın yaşadığı maksimum erime oranı.");
   Widget _buildSharpeCard() => _smartStatCard(title: "SHARPE RATIO", value: metrics.sharpeRatio.toStringAsFixed(2), color: metrics.sharpeRatio > 1.5 ? Colors.blueAccent : Colors.orangeAccent, sub: "Risk/Getiri Skoru", tooltip: "Getirinin risk başına verimliliği. 1.5 üzeri kurumsal standarttır.");
   Widget _buildSlaCard() => _smartStatCard(title: "SLA PING", value: "${metrics.avgLatency}ms", color: metrics.avgLatency > 50 ? Colors.redAccent : Colors.greenAccent, sub: "Borsa Gecikmesi", tooltip: "Sistemin borsa ile haberleşme hızı. <20ms idealdir.");
 
-  // 🚀 DÜZELTİLDİ: tooltip parametresi eklendi
   Widget _smartStatCard({required String title, required String value, required Color color, required String sub, required String tooltip}) {
     return Tooltip(
       message: tooltip,
@@ -144,6 +147,27 @@ class StatsPanel extends StatelessWidget {
     );
   }
 
+  // 🔥 YENİ: DIAGNOSE (KAPUTUN ALTI) BUTONU
+  Widget _buildDiagnoseButton(BuildContext context) {
+    return Tooltip(
+      message: "Sistem Sağlık Raporu (Diagnose)",
+      child: InkWell(
+        onTap: () => _showDiagnoseModal(context),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.blueAccent.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blueAccent.withOpacity(0.3), width: 1.5)
+          ),
+          child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(Icons.monitor_heart, color: Colors.blueAccent, size: 24), SizedBox(height: 4),
+            Text("SAĞLIK", style: TextStyle(color: Colors.blueAccent, fontSize: 10, fontWeight: FontWeight.w900)),
+          ]),
+        ),
+      ),
+    );
+  }
+
   Widget _buildKillSwitch(BuildContext context) {
     return InkWell(
       onLongPress: () { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("🚨 KILL SWITCH TETİKLENDİ!"), backgroundColor: Colors.redAccent)); },
@@ -156,4 +180,81 @@ class StatsPanel extends StatelessWidget {
       ),
     );
   }
+
+// API'den JSON çekip Ekranda Gösteren Fonksiyon
+  void _showDiagnoseModal(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      // 🔥 CERRAHİ: WebSocket URL'sinden IP ve Port'u dinamik olarak çıkarıyoruz!
+      const envWsUrl = String.fromEnvironment('WS_URL', defaultValue: '');
+      String apiUrl;
+
+      if (envWsUrl.isNotEmpty) {
+        final uri = Uri.parse(envWsUrl);
+        apiUrl = 'http://${uri.host}:${uri.port}/api/v1/diagnostics';
+      } else {
+        final host = Uri.base.host.isNotEmpty ? Uri.base.host : '127.0.0.1';
+        apiUrl = 'http://$host:18080/api/v1/diagnostics';
+      }
+
+      final response = await http.get(Uri.parse(apiUrl)).timeout(const Duration(seconds: 3));
+      
+      if (context.mounted) Navigator.pop(context); // Yükleniyoru kapat
+
+      if (response.statusCode == 200) {
+        // UTF-8 Desteği eklendi (Türkçe karakterlerin bozulmaması için)
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: const Color(0xFF18181B),
+              title: const Text("⚙️ KANTİTATİF SİSTEM SAĞLIĞI", style: TextStyle(color: Colors.white, fontSize: 16)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _diagRow("Sistem Durumu:", data['status'], Colors.greenAccent),
+                  _diagRow("Uptime (Açık Kalma):", "${data['uptime_seconds']} saniye", Colors.white70),
+                  _diagRow("Aktif İzleyici Sayısı:", "${data['active_ui_connections']}", Colors.white70),
+                  _diagRow("Önbellek (Rapor):", "${data['cached_reports']} işlem", Colors.white70),
+                  const Divider(color: Colors.white24),
+                  Text("Sistem Mesajı:\n${data['message']}", style: const TextStyle(color: Colors.blueAccent, fontSize: 12, fontStyle: FontStyle.italic)),
+                ],
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text("KAPAT", style: TextStyle(color: Colors.white54))),
+              ],
+            ),
+          );
+        }
+      } else {
+        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("⚠️ Diagnose API Yanıt Vermedi!")));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("🚨 Hata: Sunucuya Ulaşılamadı")));
+      }
+    }
+  }
+
+  Widget _diagRow(String label, String value, Color vColor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.white54, fontSize: 13)),
+          Text(value, style: TextStyle(color: vColor, fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+        ],
+      ),
+    );
+  }
+
 }

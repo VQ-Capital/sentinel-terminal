@@ -1,3 +1,4 @@
+// ========== DOSYA: sentinel-terminal/lib/features/dashboard/widgets/tables_widget.dart ==========
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/terminal_stream.dart';
@@ -98,7 +99,7 @@ class TradeLogPanel extends ConsumerWidget {
           const Divider(height: 1, color: Colors.white10),
           Expanded(
             child: reports.isEmpty
-                ? const Center(child: Text("Sistem Isınıyor...", style: TextStyle(color: Colors.white54)))
+                ? _buildSmartEmptyState(ref) // 🔥 CERRAHİ: Artık Akıllı Boş Ekran Kullanılıyor
                 : ListView.separated(
                     itemCount: reports.length,
                     separatorBuilder: (_, __) => const Divider(height: 1, color: Colors.white10),
@@ -109,7 +110,6 @@ class TradeLogPanel extends ConsumerWidget {
                       final timeStr = DateTime.fromMillisecondsSinceEpoch(r.timestamp.toInt()).toString().substring(11, 19);
                       final symbolClean = r.symbol.replaceAll('USDT', '');
                       
-                      // Slippage Hesaplama
                       final slippagePct = r.expectedPrice > 0 ? ((r.executionPrice - r.expectedPrice).abs() / r.expectedPrice) * 100 : 0.0;
 
                       return Padding(
@@ -136,19 +136,37 @@ class TradeLogPanel extends ConsumerWidget {
     );
   }
 
+  // 🔥 YENİ: Gerçek durumu bildiren Akıllı Boş Ekran
+  Widget _buildSmartEmptyState(WidgetRef ref) {
+    // Ekranda Manifold verisi var mı diye bakıyoruz
+    final isWarmedUp = ref.watch(zScoreProvider).isNotEmpty;
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: const [
-          CircularProgressIndicator(strokeWidth: 2, color: Colors.blueAccent),
-          SizedBox(height: 24),
-          Text("Sistem Isınıyor (Blindspot Bekleniyor)", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text("Piyasadan geçmiş vektörler toplanıyor...", style: TextStyle(color: Colors.white54, fontSize: 12)),
-        ],
-      ),
-    );
+    if (!isWarmedUp) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            CircularProgressIndicator(strokeWidth: 2, color: Colors.blueAccent),
+            SizedBox(height: 24),
+            Text("Sistem Isınıyor (Blindspot Bekleniyor)", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Text("Piyasadan geçmiş vektörler toplanıyor...", style: TextStyle(color: Colors.white54, fontSize: 12)),
+          ],
+        ),
+      );
+    } else {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.radar, color: Colors.white24, size: 48),
+            SizedBox(height: 16),
+            Text("Piyasa Fırsatı Bekleniyor", style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Text("AI aktif. Kesişim vektörü bulunduğunda işlem açılacak.", style: TextStyle(color: Colors.white38, fontSize: 12)),
+          ],
+        ),
+      );
+    }
   }
 }
