@@ -77,26 +77,28 @@ class TradeLogPanel extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(padding: EdgeInsets.all(16.0), child: Text("CANLI İŞLEM DEFTERİ", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1))),
+          const Padding(padding: EdgeInsets.all(16.0), child: Text("CANLI İŞLEM DEFTERİ (INSTITUTIONAL LOG)", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1))),
           const Divider(height: 1, color: Colors.white10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               children: [
-                Expanded(flex: isDesktop ? 2 : 3, child: const Text("ZAMAN", style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
+                Expanded(flex: 2, child: const Text("ZAMAN", style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
                 const Expanded(flex: 1, child: Center(child: Text("YÖN", style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)))),
                 const SizedBox(width: 8),
                 const Expanded(flex: 2, child: Text("COIN", style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
+                if (isDesktop) const Expanded(flex: 2, child: Text("ORDER ID", style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
                 const Expanded(flex: 2, child: Text("FİYAT", textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
+                if (isDesktop) const Expanded(flex: 2, child: Text("SLIPPAGE", textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
+                if (isDesktop) const Expanded(flex: 2, child: Text("FEE", textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
                 const Expanded(flex: 2, child: Text("NET PnL", textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
-                const Expanded(flex: 2, child: Text("SLA PING", textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
               ],
             ),
           ),
           const Divider(height: 1, color: Colors.white10),
           Expanded(
             child: reports.isEmpty
-                ? _buildEmptyState()
+                ? const Center(child: Text("Sistem Isınıyor...", style: TextStyle(color: Colors.white54)))
                 : ListView.separated(
                     itemCount: reports.length,
                     separatorBuilder: (_, __) => const Divider(height: 1, color: Colors.white10),
@@ -104,25 +106,25 @@ class TradeLogPanel extends ConsumerWidget {
                       final r = reports[index];
                       final isBuy = r.side == "BUY";
                       final pnlColor = r.realizedPnl >= 0 ? Colors.greenAccent : Colors.redAccent;
-                      final latColor = r.latencyMs > 50 ? Colors.redAccent : (r.latencyMs > 20 ? Colors.blueAccent : Colors.greenAccent);
-                      final timeStr = DateTime.fromMillisecondsSinceEpoch(r.timestamp.toInt()).toString().substring(11, isDesktop ? 19 : 16);
-                      final symbolClean = r.symbol.replaceAll('usdt', '').replaceAll('USDT', '').toUpperCase();
+                      final timeStr = DateTime.fromMillisecondsSinceEpoch(r.timestamp.toInt()).toString().substring(11, 19);
+                      final symbolClean = r.symbol.replaceAll('USDT', '');
+                      
+                      // Slippage Hesaplama
+                      final slippagePct = r.expectedPrice > 0 ? ((r.executionPrice - r.expectedPrice).abs() / r.expectedPrice) * 100 : 0.0;
 
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         child: Row(
                           children: [
-                            Expanded(flex: isDesktop ? 2 : 3, child: FittedBox(alignment: Alignment.centerLeft, fit: BoxFit.scaleDown, child: Text(timeStr, style: const TextStyle(color: Colors.white54, fontSize: 12, fontFamily: 'monospace')))),
+                            Expanded(flex: 2, child: FittedBox(alignment: Alignment.centerLeft, fit: BoxFit.scaleDown, child: Text(timeStr, style: const TextStyle(color: Colors.white54, fontSize: 12, fontFamily: 'monospace')))),
                             Expanded(flex: 1, child: Container(alignment: Alignment.center, padding: const EdgeInsets.symmetric(vertical: 3), decoration: BoxDecoration(color: isBuy ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(4)), child: Text(r.side, style: TextStyle(color: isBuy ? Colors.greenAccent : Colors.redAccent, fontSize: 9, fontWeight: FontWeight.bold)))),
                             const SizedBox(width: 8),
-                            Expanded(flex: 2, child: Row(children: [
-                              Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: symbolClean == "BTC" ? Colors.orange : (symbolClean == "ETH" ? Colors.blue : (symbolClean == "SOL" ? Colors.purpleAccent : Colors.yellow)))),
-                              const SizedBox(width: 6),
-                              Expanded(child: FittedBox(alignment: Alignment.centerLeft, fit: BoxFit.scaleDown, child: Text(symbolClean, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)))),
-                            ])),
+                            Expanded(flex: 2, child: FittedBox(alignment: Alignment.centerLeft, fit: BoxFit.scaleDown, child: Text(symbolClean, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)))),
+                            if (isDesktop) Expanded(flex: 2, child: FittedBox(alignment: Alignment.centerLeft, fit: BoxFit.scaleDown, child: Text(r.orderId.isNotEmpty ? r.orderId : "N/A", style: const TextStyle(color: Colors.white38, fontSize: 11, fontFamily: 'monospace')))),
                             Expanded(flex: 2, child: FittedBox(alignment: Alignment.centerRight, fit: BoxFit.scaleDown, child: Text("\$${r.executionPrice.toStringAsFixed(1)}", textAlign: TextAlign.right, style: const TextStyle(fontFamily: 'monospace', fontSize: 13, color: Colors.white70)))),
-                            Expanded(flex: 2, child: FittedBox(alignment: Alignment.centerRight, fit: BoxFit.scaleDown, child: Text("${r.realizedPnl >= 0 ? '+' : ''}${r.realizedPnl.toStringAsFixed(3)}", textAlign: TextAlign.right, style: TextStyle(color: pnlColor, fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 13)))),
-                            Expanded(flex: 2, child: FittedBox(alignment: Alignment.centerRight, fit: BoxFit.scaleDown, child: Text("${r.latencyMs}ms", textAlign: TextAlign.right, style: TextStyle(color: latColor, fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 13)))),
+                            if (isDesktop) Expanded(flex: 2, child: FittedBox(alignment: Alignment.centerRight, fit: BoxFit.scaleDown, child: Text("${slippagePct.toStringAsFixed(4)}%", textAlign: TextAlign.right, style: const TextStyle(color: Colors.orangeAccent, fontSize: 12, fontFamily: 'monospace')))),
+                            if (isDesktop) Expanded(flex: 2, child: FittedBox(alignment: Alignment.centerRight, fit: BoxFit.scaleDown, child: Text("\$${r.commission.toStringAsFixed(2)}", textAlign: TextAlign.right, style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontFamily: 'monospace')))),
+                            Expanded(flex: 2, child: FittedBox(alignment: Alignment.centerRight, fit: BoxFit.scaleDown, child: Text("${r.realizedPnl >= 0 ? '+' : ''}${r.realizedPnl.toStringAsFixed(2)}", textAlign: TextAlign.right, style: TextStyle(color: pnlColor, fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 13)))),
                           ],
                         ),
                       );
@@ -133,6 +135,7 @@ class TradeLogPanel extends ConsumerWidget {
       ),
     );
   }
+
 
   Widget _buildEmptyState() {
     return Center(

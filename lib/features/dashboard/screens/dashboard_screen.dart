@@ -20,21 +20,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    ref.read(vqPipelineProvider); // NATS Veri akışını başlat
+    // VQ-Pipeline: NATS Protobuf akışını enjektör gibi başlat
+    ref.read(vqPipelineProvider); 
   }
 
   @override
   Widget build(BuildContext context) {
     final metrics = ref.watch(dashboardMetricsProvider);
-    final isDesktop = MediaQuery.of(context).size.width > 900;
+    final isDesktop = MediaQuery.of(context).size.width > 1100; // Geniş ekran takibi
 
     return Scaffold(
       appBar: TerminalAppBar(isDefensiveMode: metrics.isDefensiveMode),
       body: Column(
         children: [
-          const MarketTickerTape(), 
+          const MarketTickerTape(), // Borsalardan gelen canlı tick verisi
           Expanded(
-            child: isDesktop ? _buildDesktopLayout(metrics) : _buildMobileLayout(metrics),
+            child: isDesktop 
+                ? _buildInstitutionalDesktopLayout(metrics) 
+                : _buildMobileLayout(metrics),
           ),
         ],
       ),
@@ -42,40 +45,79 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildDesktopLayout(DashboardMetrics metrics) {
+  // ==============================================================================
+  // 🏛️ KURUMSAL DESKTOP YERLEŞİMİ (INVESTOR READY)
+  // ==============================================================================
+  Widget _buildInstitutionalDesktopLayout(DashboardMetrics metrics) {
     return Padding(
       padding: const EdgeInsets.all(12.0),
       child: Column(
         children: [
+          // 1. ÜST PANEL: Cüzdan, Equity, Drawdown ve Sharpe Kartları
           StatsPanel(metrics: metrics, isDesktop: true),
+          
           const SizedBox(height: 12),
+          
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // SOL SÜTUN: Finansal Sağlık (Grafik ve Pozisyonlar)
                 Expanded(
-                  flex: 3,
+                  flex: 35,
                   child: Column(
                     children: [
-                      Expanded(flex: 4, child: PnlChartWidget(history: metrics.pnlHistory, currentPnl: metrics.displayRealizedPnL)),
+                      // Dual-Line Equity & Balance Chart (Yatırımcının en çok bakacağı yer)
+                      Expanded(
+                        flex: 45, 
+                        child: PnlChartWidget(
+                          balanceHistory: metrics.balanceHistory,
+                          equityHistory: metrics.equityHistory,
+                          currentPnl: metrics.displayRealizedPnL,
+                        )
+                      ),
                       const SizedBox(height: 12),
-                      Expanded(flex: 6, child: OpenPositionsPanel(positions: metrics.positions, avgPrices: metrics.avgPrices)),
+                      // Canlı Açık Pozisyonlar Tablosu (Giriş Fiyatı ve Floating PnL)
+                      Expanded(
+                        flex: 55, 
+                        child: OpenPositionsPanel(
+                          positions: metrics.positions, 
+                          avgPrices: metrics.avgPrices
+                        )
+                      ),
                     ],
                   ),
                 ),
+                
                 const SizedBox(width: 12),
+                
+                // ORTA SÜTUN: AI & Vektörel Karar Merkezi
                 const Expanded(
-                  flex: 4,
-                  child: ZScoreRadarPanel(),
+                  flex: 30,
+                  child: ZScoreRadarPanel(), // 4-Boyutlu Z-Score füzyonu
                 ),
+                
                 const SizedBox(width: 12),
+                
+                // SAĞ SÜTUN: Sistem Güvenilirliği & İşlem Kaydı
                 Expanded(
-                  flex: 3,
+                  flex: 35,
                   child: Column(
                     children: [
-                      Expanded(flex: 3, child: LatencyChartWidget(latencies: metrics.recentLatencies, avgLatency: metrics.avgLatency)),
+                      // SLA Watchdog: Borsa gecikme analizi
+                      Expanded(
+                        flex: 30, 
+                        child: LatencyChartWidget(
+                          latencies: metrics.recentLatencies, 
+                          avgLatency: metrics.avgLatency
+                        )
+                      ),
                       const SizedBox(height: 12),
-                      const Expanded(flex: 7, child: TradeLogPanel(isDesktop: true)),
+                      // Kurumsal İşlem Defteri (Order ID, Commission, Slippage Dahil)
+                      const Expanded(
+                        flex: 70, 
+                        child: TradeLogPanel(isDesktop: true)
+                      ),
                     ],
                   ),
                 ),
@@ -87,34 +129,59 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  // ==============================================================================
+  // 📱 MOBİL YERLEŞİM (YÖNETİCİ TAKİBİ)
+  // ==============================================================================
   Widget _buildMobileLayout(DashboardMetrics metrics) {
     return IndexedStack(
       index: _mobileSelectedIndex,
       children: [
+        // AI & PİYASA SEKİMESİ
         ListView(
           padding: const EdgeInsets.all(12),
           children: [
             StatsPanel(metrics: metrics, isDesktop: false),
             const SizedBox(height: 12),
-            const SizedBox(height: 500, child: ZScoreRadarPanel()),
+            const SizedBox(height: 550, child: ZScoreRadarPanel()),
           ],
         ),
+        // PORTFÖY & GRAFİK SEKİMESİ
         ListView(
           padding: const EdgeInsets.all(12),
           children: [
-            SizedBox(height: 250, child: PnlChartWidget(history: metrics.pnlHistory, currentPnl: metrics.displayRealizedPnL)),
+            SizedBox(
+              height: 250, 
+              child: PnlChartWidget(
+                balanceHistory: metrics.balanceHistory,
+                equityHistory: metrics.equityHistory,
+                currentPnl: metrics.displayRealizedPnL
+              )
+            ),
             const SizedBox(height: 12),
-            SizedBox(height: 500, child: OpenPositionsPanel(positions: metrics.positions, avgPrices: metrics.avgPrices)),
+            SizedBox(
+              height: 500, 
+              child: OpenPositionsPanel(
+                positions: metrics.positions, 
+                avgPrices: metrics.avgPrices
+              )
+            ),
           ],
         ),
+        // SİSTEM & LOG SEKİMESİ
         ListView(
           padding: const EdgeInsets.all(12),
           children: [
             const SlaHeatmapPanel(),
             const SizedBox(height: 12),
-            SizedBox(height: 200, child: LatencyChartWidget(latencies: metrics.recentLatencies, avgLatency: metrics.avgLatency)),
+            SizedBox(
+              height: 200, 
+              child: LatencyChartWidget(
+                latencies: metrics.recentLatencies, 
+                avgLatency: metrics.avgLatency
+              )
+            ),
             const SizedBox(height: 12),
-            const SizedBox(height: 600, child: TradeLogPanel(isDesktop: false)),
+            const SizedBox(height: 650, child: TradeLogPanel(isDesktop: false)),
           ],
         ),
       ],
@@ -125,13 +192,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return BottomNavigationBar(
       backgroundColor: const Color(0xFF121214),
       selectedItemColor: Colors.blueAccent,
-      unselectedItemColor: Colors.white38,
+      unselectedItemColor: Colors.white24,
       currentIndex: _mobileSelectedIndex,
       onTap: (index) => setState(() => _mobileSelectedIndex = index),
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.radar), label: 'AI Radar'),
         BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet), label: 'Portföy'),
-        BottomNavigationBarItem(icon: Icon(Icons.monitor_heart), label: 'Sistem'),
+        BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Loglar'),
       ],
     );
   }

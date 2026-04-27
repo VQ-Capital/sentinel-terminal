@@ -36,6 +36,8 @@ const EquitySnapshot$json = {
     },
     {'1': 'timestamp', '3': 4, '4': 1, '5': 3, '10': 'timestamp'},
     {'1': 'is_reconciled', '3': 5, '4': 1, '5': 8, '10': 'isReconciled'},
+    {'1': 'max_drawdown_pct', '3': 6, '4': 1, '5': 1, '10': 'maxDrawdownPct'},
+    {'1': 'sharpe_ratio', '3': 7, '4': 1, '5': 1, '10': 'sharpeRatio'},
   ],
 };
 
@@ -45,4 +47,5 @@ final $typed_data.Uint8List equitySnapshotDescriptor = $convert.base64Decode(
     'VzZBIwChRhdmFpbGFibGVfbWFyZ2luX3VzZBgCIAEoAVISYXZhaWxhYmxlTWFyZ2luVXNkEjAK'
     'FHRvdGFsX3VucmVhbGl6ZWRfcG5sGAMgASgBUhJ0b3RhbFVucmVhbGl6ZWRQbmwSHAoJdGltZX'
     'N0YW1wGAQgASgDUgl0aW1lc3RhbXASIwoNaXNfcmVjb25jaWxlZBgFIAEoCFIMaXNSZWNvbmNp'
-    'bGVk');
+    'bGVkEigKEG1heF9kcmF3ZG93bl9wY3QYBiABKAFSDm1heERyYXdkb3duUGN0EiEKDHNoYXJwZV'
+    '9yYXRpbxgHIAEoAVILc2hhcnBlUmF0aW8=');

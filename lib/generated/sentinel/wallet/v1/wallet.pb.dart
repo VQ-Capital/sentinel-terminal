@@ -27,6 +27,8 @@ class EquitySnapshot extends $pb.GeneratedMessage {
     $core.double? totalUnrealizedPnl,
     $fixnum.Int64? timestamp,
     $core.bool? isReconciled,
+    $core.double? maxDrawdownPct,
+    $core.double? sharpeRatio,
   }) {
     final result = create();
     if (totalEquityUsd != null) result.totalEquityUsd = totalEquityUsd;
@@ -36,6 +38,8 @@ class EquitySnapshot extends $pb.GeneratedMessage {
       result.totalUnrealizedPnl = totalUnrealizedPnl;
     if (timestamp != null) result.timestamp = timestamp;
     if (isReconciled != null) result.isReconciled = isReconciled;
+    if (maxDrawdownPct != null) result.maxDrawdownPct = maxDrawdownPct;
+    if (sharpeRatio != null) result.sharpeRatio = sharpeRatio;
     return result;
   }
 
@@ -58,6 +62,8 @@ class EquitySnapshot extends $pb.GeneratedMessage {
     ..aD(3, _omitFieldNames ? '' : 'totalUnrealizedPnl')
     ..aInt64(4, _omitFieldNames ? '' : 'timestamp')
     ..aOB(5, _omitFieldNames ? '' : 'isReconciled')
+    ..aD(6, _omitFieldNames ? '' : 'maxDrawdownPct')
+    ..aD(7, _omitFieldNames ? '' : 'sharpeRatio')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -123,6 +129,24 @@ class EquitySnapshot extends $pb.GeneratedMessage {
   $core.bool hasIsReconciled() => $_has(4);
   @$pb.TagNumber(5)
   void clearIsReconciled() => $_clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.double get maxDrawdownPct => $_getN(5);
+  @$pb.TagNumber(6)
+  set maxDrawdownPct($core.double value) => $_setDouble(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasMaxDrawdownPct() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearMaxDrawdownPct() => $_clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.double get sharpeRatio => $_getN(6);
+  @$pb.TagNumber(7)
+  set sharpeRatio($core.double value) => $_setDouble(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasSharpeRatio() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearSharpeRatio() => $_clearField(7);
 }
 
 const $core.bool _omitFieldNames =

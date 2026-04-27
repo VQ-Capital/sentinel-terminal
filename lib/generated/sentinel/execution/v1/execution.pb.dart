@@ -156,6 +156,7 @@ class ExecutionReport extends $pb.GeneratedMessage {
     $fixnum.Int64? latencyMs,
     $fixnum.Int64? timestamp,
     $core.bool? isSimulated,
+    $core.String? orderId,
   }) {
     final result = create();
     if (symbol != null) result.symbol = symbol;
@@ -168,6 +169,7 @@ class ExecutionReport extends $pb.GeneratedMessage {
     if (latencyMs != null) result.latencyMs = latencyMs;
     if (timestamp != null) result.timestamp = timestamp;
     if (isSimulated != null) result.isSimulated = isSimulated;
+    if (orderId != null) result.orderId = orderId;
     return result;
   }
 
@@ -195,6 +197,7 @@ class ExecutionReport extends $pb.GeneratedMessage {
     ..aInt64(8, _omitFieldNames ? '' : 'latencyMs')
     ..aInt64(9, _omitFieldNames ? '' : 'timestamp')
     ..aOB(10, _omitFieldNames ? '' : 'isSimulated')
+    ..aOS(11, _omitFieldNames ? '' : 'orderId')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -305,6 +308,15 @@ class ExecutionReport extends $pb.GeneratedMessage {
   $core.bool hasIsSimulated() => $_has(9);
   @$pb.TagNumber(10)
   void clearIsSimulated() => $_clearField(10);
+
+  @$pb.TagNumber(11)
+  $core.String get orderId => $_getSZ(10);
+  @$pb.TagNumber(11)
+  set orderId($core.String value) => $_setString(10, value);
+  @$pb.TagNumber(11)
+  $core.bool hasOrderId() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearOrderId() => $_clearField(11);
 }
 
 const $core.bool _omitFieldNames =

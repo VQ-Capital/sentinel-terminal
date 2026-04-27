@@ -1,30 +1,40 @@
+// ========== DOSYA: sentinel-terminal/lib/features/dashboard/providers/dashboard_provider.dart ==========
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/terminal_stream.dart';
 
 class DashboardMetrics {
-  final double displayBalance;
+  final double displayBalance;     // Gerçekleşen (Balance)
+  final double displayEquity;      // Yüzen Dahil (Equity)
   final double displayRealizedPnL;
   final double displayUnrealizedPnL;
   final double winRate;
   final int avgLatency;
   final bool isDefensiveMode;
-  final List<double> pnlHistory;
-  final List<int> recentLatencies;
+  final List<double> balanceHistory; // Mavi Çizgi
+  final List<double> equityHistory;  // Sarı Çizgi
+  final List<int> recentLatencies;   // 🚀 DÜZELTİLDİ: Geri eklendi
   final Map<String, double> positions;
   final Map<String, double> avgPrices;
+  
+  final double maxDrawdownPct;
+  final double sharpeRatio;
 
   DashboardMetrics({
-    required this.displayBalance,
+    required this.displayBalance, 
+    required this.displayEquity, 
     required this.displayRealizedPnL,
-    required this.displayUnrealizedPnL,
-    required this.winRate,
+    required this.displayUnrealizedPnL, 
+    required this.winRate, 
     required this.avgLatency,
-    required this.isDefensiveMode,
-    required this.pnlHistory,
-    required this.recentLatencies,
-    required this.positions,
-    required this.avgPrices,
+    required this.isDefensiveMode, 
+    required this.balanceHistory, 
+    required this.equityHistory,
+    required this.recentLatencies,   // 🚀 DÜZELTİLDİ
+    required this.positions, 
+    required this.avgPrices, 
+    required this.maxDrawdownPct, 
+    required this.sharpeRatio,
   });
 }
 
@@ -33,20 +43,23 @@ final dashboardMetricsProvider = Provider<DashboardMetrics>((ref) {
   final marketPrices = ref.watch(marketDataNotifierProvider);
   final equityData = ref.watch(equityProvider);
 
-  const double initialBalance = 10.00;
-  double localRealizedPnL = 0.0;
-  List<double> pnlHistory = [0.0];
+  const double initialBalance = 100000.00; // 100K Kurumsal Bakiye
+  double localBalance = initialBalance;
+  List<double> balanceHistory = [initialBalance];
+  List<double> equityHistory = [initialBalance];
   Map<String, double> positions = {};
   Map<String, double> avgPrices = {};
-  int closedTrades = 0;
+  int closedTrades = 0; 
   int winningTrades = 0;
 
+  // Latency hesaplamaları
   List<int> recentLatencies = reports.take(100).map((r) => r.latencyMs.toInt()).toList().reversed.toList();
   int avgLatency = recentLatencies.isEmpty ? 0 : (recentLatencies.reduce((a, b) => a + b) / recentLatencies.length).round();
 
   for (var r in reports.reversed) {
-    localRealizedPnL += r.realizedPnl;
-    pnlHistory.add(localRealizedPnL);
+    localBalance += r.realizedPnl;
+    balanceHistory.add(localBalance);
+    equityHistory.add(localBalance + (equityData?.totalUnrealizedPnl ?? 0.0));
 
     double posQty = positions[r.symbol] ?? 0.0;
     double avgPrice = avgPrices[r.symbol] ?? 0.0;
@@ -75,31 +88,22 @@ final dashboardMetricsProvider = Provider<DashboardMetrics>((ref) {
     avgPrices[r.symbol] = avgPrice;
   }
 
-  double localUnrealizedPnL = 0.0;
-  positions.forEach((symbol, qty) {
-    if (qty.abs() > 0.000001) {
-      double currentPrice = marketPrices[symbol] ?? avgPrices[symbol] ?? 0.0;
-      if (currentPrice > 0) {
-        localUnrealizedPnL += qty > 0
-            ? (currentPrice - avgPrices[symbol]!) * qty
-            : (avgPrices[symbol]! - currentPrice) * qty.abs();
-      }
-    }
-  });
-
   double winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0.0;
-  final displayBalance = equityData?.totalEquityUsd ?? (initialBalance + localRealizedPnL);
-
+  
   return DashboardMetrics(
-    displayBalance: displayBalance,
-    displayRealizedPnL: displayBalance - initialBalance,
-    displayUnrealizedPnL: equityData?.totalUnrealizedPnl ?? localUnrealizedPnL,
+    displayBalance: equityData?.availableMarginUsd ?? localBalance,
+    displayEquity: equityData?.totalEquityUsd ?? localBalance,
+    displayRealizedPnL: (equityData?.availableMarginUsd ?? localBalance) - initialBalance,
+    displayUnrealizedPnL: equityData?.totalUnrealizedPnl ?? 0.0,
     winRate: winRate,
     avgLatency: avgLatency,
-    isDefensiveMode: ((initialBalance - displayBalance) / initialBalance) > 0.15,
-    pnlHistory: pnlHistory,
-    recentLatencies: recentLatencies,
+    isDefensiveMode: (equityData?.maxDrawdownPct ?? 0.0) > 15.0,
+    balanceHistory: balanceHistory,
+    equityHistory: equityHistory,
+    recentLatencies: recentLatencies, // 🚀 DÜZELTİLDİ
     positions: positions,
     avgPrices: avgPrices,
+    maxDrawdownPct: equityData?.maxDrawdownPct ?? 0.0,
+    sharpeRatio: equityData?.sharpeRatio ?? 0.0,
   );
 });

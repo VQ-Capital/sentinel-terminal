@@ -148,15 +148,16 @@ class ZScoreRadarPanel extends ConsumerWidget {
 }
 
 class PnlChartWidget extends StatelessWidget {
-  final List<double> history;
+  final List<double> balanceHistory;
+  final List<double> equityHistory;
   final double currentPnl;
-  const PnlChartWidget({super.key, required this.history, required this.currentPnl});
+  
+  const PnlChartWidget({super.key, required this.balanceHistory, required this.equityHistory, required this.currentPnl});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      width: double.infinity, padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: const Color(0xFF18181B), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white.withOpacity(0.05))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,13 +165,13 @@ class PnlChartWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("KÜMÜLATİF PnL", style: TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
-              Text("${currentPnl >= 0 ? '+' : ''}\$${currentPnl.toStringAsFixed(2)}",
+              const Text("EQUITY vs BALANCE EĞRİSİ", style: TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+              Text("${currentPnl >= 0 ? '+' : ''}\$${currentPnl.toStringAsFixed(0)}",
                   style: TextStyle(color: currentPnl >= 0 ? Colors.greenAccent : Colors.redAccent, fontSize: 16, fontWeight: FontWeight.w900, fontFamily: 'monospace')),
             ],
           ),
           const SizedBox(height: 20),
-          Expanded(child: ClipRect(child: CustomPaint(painter: PnLChartPainter(history), size: Size.infinite))),
+          Expanded(child: ClipRect(child: CustomPaint(painter: PnLChartPainter(balanceHistory, equityHistory), size: Size.infinite))),
         ],
       ),
     );
@@ -254,40 +255,58 @@ class SlaHeatmapPanel extends ConsumerWidget {
   }
 }
 
+
 class PnLChartPainter extends CustomPainter {
-  final List<double> history;
-  PnLChartPainter(this.history);
+  final List<double> balanceHistory; // Mavi
+  final List<double> equityHistory;  // Sarı
+
+  PnLChartPainter(this.balanceHistory, this.equityHistory);
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (history.isEmpty) return;
+    if (balanceHistory.isEmpty || equityHistory.isEmpty) return;
     final gridPaint = Paint()..color = Colors.white.withOpacity(0.03)..strokeWidth = 1;
     for (int i = 1; i < 4; i++) { canvas.drawLine(Offset(0, size.height * (i / 4)), Offset(size.width, size.height * (i / 4)), gridPaint); }
 
-    final isProfit = history.last >= 0;
-    final paint = Paint()..color = isProfit ? Colors.greenAccent : Colors.redAccent..strokeWidth = 2.5..style = PaintingStyle.stroke..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round;
-    final minPnl = history.reduce(min); final maxPnl = history.reduce(max);
-    final range = (maxPnl - minPnl) == 0 ? 1.0 : (maxPnl - minPnl);
-    final paddedRange = range * 1.3; final paddedMin = minPnl - (range * 0.15);
+    // Min Max Değerleri her iki diziye göre hesapla
+    final minBal = balanceHistory.reduce(min); final maxBal = balanceHistory.reduce(max);
+    final minEq = equityHistory.reduce(min); final maxEq = equityHistory.reduce(max);
+    final globalMin = min(minBal, minEq); final globalMax = max(maxBal, maxEq);
+    
+    final range = (globalMax - globalMin) == 0 ? 1.0 : (globalMax - globalMin);
+    final paddedRange = range * 1.3; final paddedMin = globalMin - (range * 0.15);
 
-    final path = Path();
-    final dx = size.width / (history.length > 1 ? history.length - 1 : 1);
-    for (int i = 0; i < history.length; i++) {
+    final dx = size.width / (balanceHistory.length > 1 ? balanceHistory.length - 1 : 1);
+
+    // 1. Çizgi: EQUITY (Özsermaye - Yüzen PnL dahil) - Sarı/Turuncu kesik veya silik çizgi
+    final eqPath = Path();
+    for (int i = 0; i < equityHistory.length; i++) {
       final x = i * dx;
-      final y = size.height - (((history[i] - paddedMin) / paddedRange) * size.height);
-      if (i == 0) path.moveTo(x, y);
+      final y = size.height - (((equityHistory[i] - paddedMin) / paddedRange) * size.height);
+      if (i == 0) eqPath.moveTo(x, y);
       else {
         final prevX = (i - 1) * dx;
-        final prevY = size.height - (((history[i - 1] - paddedMin) / paddedRange) * size.height);
-        path.cubicTo(prevX + (dx / 2), prevY, prevX + (dx / 2), y, x, y);
+        final prevY = size.height - (((equityHistory[i - 1] - paddedMin) / paddedRange) * size.height);
+        eqPath.cubicTo(prevX + (dx / 2), prevY, prevX + (dx / 2), y, x, y);
       }
     }
-    if (minPnl < 0 && maxPnl > 0) {
-      final zeroY = size.height - ((0 - paddedMin) / paddedRange) * size.height;
-      final zeroPaint = Paint()..color = Colors.white38..strokeWidth = 1.0..style = PaintingStyle.stroke;
-      for (double i = 0; i < size.width; i += 10) canvas.drawLine(Offset(i, zeroY), Offset(i + 5, zeroY), zeroPaint);
+    final eqPaint = Paint()..color = Colors.yellowAccent.withOpacity(0.6)..strokeWidth = 1.5..style = PaintingStyle.stroke;
+    canvas.drawPath(eqPath, eqPaint);
+
+    // 2. Çizgi: BALANCE (Gerçekleşen Kasa) - Kalın Mavi/Yeşil Çizgi
+    final balPath = Path();
+    for (int i = 0; i < balanceHistory.length; i++) {
+      final x = i * dx;
+      final y = size.height - (((balanceHistory[i] - paddedMin) / paddedRange) * size.height);
+      if (i == 0) balPath.moveTo(x, y);
+      else {
+        final prevX = (i - 1) * dx;
+        final prevY = size.height - (((balanceHistory[i - 1] - paddedMin) / paddedRange) * size.height);
+        balPath.cubicTo(prevX + (dx / 2), prevY, prevX + (dx / 2), y, x, y);
+      }
     }
-    canvas.drawPath(path, paint);
+    final balPaint = Paint()..color = Colors.blueAccent..strokeWidth = 3.0..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
+    canvas.drawPath(balPath, balPaint);
   }
   @override bool shouldRepaint(covariant PnLChartPainter oldDelegate) => true;
 }

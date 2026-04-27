@@ -80,6 +80,7 @@ const ExecutionReport$json = {
     {'1': 'latency_ms', '3': 8, '4': 1, '5': 3, '10': 'latencyMs'},
     {'1': 'timestamp', '3': 9, '4': 1, '5': 3, '10': 'timestamp'},
     {'1': 'is_simulated', '3': 10, '4': 1, '5': 8, '10': 'isSimulated'},
+    {'1': 'order_id', '3': 11, '4': 1, '5': 9, '10': 'orderId'},
   ],
 };
 
@@ -90,4 +91,5 @@ final $typed_data.Uint8List executionReportDescriptor = $convert.base64Decode(
     'b25fcHJpY2UYBCABKAFSDmV4ZWN1dGlvblByaWNlEhoKCHF1YW50aXR5GAUgASgBUghxdWFudG'
     'l0eRIhCgxyZWFsaXplZF9wbmwYBiABKAFSC3JlYWxpemVkUG5sEh4KCmNvbW1pc3Npb24YByAB'
     'KAFSCmNvbW1pc3Npb24SHQoKbGF0ZW5jeV9tcxgIIAEoA1IJbGF0ZW5jeU1zEhwKCXRpbWVzdG'
-    'FtcBgJIAEoA1IJdGltZXN0YW1wEiEKDGlzX3NpbXVsYXRlZBgKIAEoCFILaXNTaW11bGF0ZWQ=');
+    'FtcBgJIAEoA1IJdGltZXN0YW1wEiEKDGlzX3NpbXVsYXRlZBgKIAEoCFILaXNTaW11bGF0ZWQS'
+    'GQoIb3JkZXJfaWQYCyABKAlSB29yZGVySWQ=');
