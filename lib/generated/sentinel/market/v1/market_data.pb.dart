@@ -381,6 +381,9 @@ class MarketStateVector extends $pb.GeneratedMessage {
     $core.double? sentimentScore,
     $core.Iterable<$core.double>? embeddings,
     $core.double? chainUrgency,
+    $core.double? mapX,
+    $core.double? mapY,
+    $core.bool? isGold,
   }) {
     final result = create();
     if (symbol != null) result.symbol = symbol;
@@ -391,6 +394,9 @@ class MarketStateVector extends $pb.GeneratedMessage {
     if (sentimentScore != null) result.sentimentScore = sentimentScore;
     if (embeddings != null) result.embeddings.addAll(embeddings);
     if (chainUrgency != null) result.chainUrgency = chainUrgency;
+    if (mapX != null) result.mapX = mapX;
+    if (mapY != null) result.mapY = mapY;
+    if (isGold != null) result.isGold = isGold;
     return result;
   }
 
@@ -417,6 +423,9 @@ class MarketStateVector extends $pb.GeneratedMessage {
     ..p<$core.double>(
         7, _omitFieldNames ? '' : 'embeddings', $pb.PbFieldType.KD)
     ..aD(8, _omitFieldNames ? '' : 'chainUrgency')
+    ..aD(9, _omitFieldNames ? '' : 'mapX', fieldType: $pb.PbFieldType.OF)
+    ..aD(10, _omitFieldNames ? '' : 'mapY', fieldType: $pb.PbFieldType.OF)
+    ..aOB(11, _omitFieldNames ? '' : 'isGold')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -505,6 +514,34 @@ class MarketStateVector extends $pb.GeneratedMessage {
   $core.bool hasChainUrgency() => $_has(7);
   @$pb.TagNumber(8)
   void clearChainUrgency() => $_clearField(8);
+
+  /// 🚀 YENİ: UI İÇİN KOORDİNATLAR (Projection)
+  @$pb.TagNumber(9)
+  $core.double get mapX => $_getN(8);
+  @$pb.TagNumber(9)
+  set mapX($core.double value) => $_setFloat(8, value);
+  @$pb.TagNumber(9)
+  $core.bool hasMapX() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearMapX() => $_clearField(9);
+
+  @$pb.TagNumber(10)
+  $core.double get mapY => $_getN(9);
+  @$pb.TagNumber(10)
+  set mapY($core.double value) => $_setFloat(9, value);
+  @$pb.TagNumber(10)
+  $core.bool hasMapY() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearMapY() => $_clearField(10);
+
+  @$pb.TagNumber(11)
+  $core.bool get isGold => $_getBF(10);
+  @$pb.TagNumber(11)
+  set isGold($core.bool value) => $_setBool(10, value);
+  @$pb.TagNumber(11)
+  $core.bool hasIsGold() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearIsGold() => $_clearField(11);
 }
 
 /// ✅ YENİ EKLENEN PROTOKOL

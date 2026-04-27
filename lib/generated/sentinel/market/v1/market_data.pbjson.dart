@@ -108,6 +108,9 @@ const MarketStateVector$json = {
     {'1': 'sentiment_score', '3': 6, '4': 1, '5': 1, '10': 'sentimentScore'},
     {'1': 'embeddings', '3': 7, '4': 3, '5': 1, '10': 'embeddings'},
     {'1': 'chain_urgency', '3': 8, '4': 1, '5': 1, '10': 'chainUrgency'},
+    {'1': 'map_x', '3': 9, '4': 1, '5': 2, '10': 'mapX'},
+    {'1': 'map_y', '3': 10, '4': 1, '5': 2, '10': 'mapY'},
+    {'1': 'is_gold', '3': 11, '4': 1, '5': 8, '10': 'isGold'},
   ],
 };
 
@@ -118,7 +121,8 @@ final $typed_data.Uint8List marketStateVectorDescriptor = $convert.base64Decode(
     'A1INd2luZG93RW5kVGltZRIlCg5wcmljZV92ZWxvY2l0eRgEIAEoAVINcHJpY2VWZWxvY2l0eR'
     'IpChB2b2x1bWVfaW1iYWxhbmNlGAUgASgBUg92b2x1bWVJbWJhbGFuY2USJwoPc2VudGltZW50'
     'X3Njb3JlGAYgASgBUg5zZW50aW1lbnRTY29yZRIeCgplbWJlZGRpbmdzGAcgAygBUgplbWJlZG'
-    'RpbmdzEiMKDWNoYWluX3VyZ2VuY3kYCCABKAFSDGNoYWluVXJnZW5jeQ==');
+    'RpbmdzEiMKDWNoYWluX3VyZ2VuY3kYCCABKAFSDGNoYWluVXJnZW5jeRITCgVtYXBfeBgJIAEo'
+    'AlIEbWFwWBITCgVtYXBfeRgKIAEoAlIEbWFwWRIXCgdpc19nb2xkGAsgASgIUgZpc0dvbGQ=');
 
 @$core.Deprecated('Use chainUrgencyEventDescriptor instead')
 const ChainUrgencyEvent$json = {
