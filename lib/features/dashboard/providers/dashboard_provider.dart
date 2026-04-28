@@ -33,7 +33,6 @@ class DashboardMetrics {
 
 final dashboardMetricsProvider = Provider<DashboardMetrics>((ref) {
   final reports = ref.watch(reportListProvider);
-  final marketPrices = ref.watch(marketDataNotifierProvider);
   final equityData = ref.watch(equityProvider);
 
   if (_capturedInitialBalance == null && equityData != null) {
@@ -80,7 +79,7 @@ final dashboardMetricsProvider = Provider<DashboardMetrics>((ref) {
       posQty = newQty;
     }
 
-    // 🔥 CERRAHİ: Hayalet Float'ları temizler. Pozisyon kapandıysa RAM'den sil.
+    // 🔥 CERRAHİ: Hayalet Float'ları (Ghost Positions) acımasızca temizler. Epsilon değeri 1e-6.
     if (posQty.abs() <= 0.000001) {
       positions.remove(r.symbol);
       avgPrices.remove(r.symbol);

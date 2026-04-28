@@ -25,9 +25,9 @@ class ZScoreRadarPanel extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("🧠 AI OMNISCIENCE RADARI", style: TextStyle(color: Colors.blueAccent, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
+              const Text("🧠 AI 12D ONNX FUSION RADAR", style: TextStyle(color: Colors.blueAccent, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
               Tooltip(
-                message: "Yapay zeka piyasayı 4 boyutta analiz eder.\nBarlar sağa kayarsa ALIM (Yeşil/Mavi),\nsola kayarsa SATIŞ (Kırmızı) baskısı vardır.",
+                message: "Yapay zeka piyasayı 12 boyutta (ONNX) analiz eder.\nAşağıdaki 4 metrik ana bileşenlerdir (PCA Base).\nBarlar sağa kayarsa ALIM (Yeşil/Mavi),\nsola kayarsa SATIŞ (Kırmızı) baskısı vardır.",
                 child: Icon(Icons.help_outline, color: Colors.blueAccent.withOpacity(0.5), size: 16),
               )
             ],
@@ -80,13 +80,13 @@ class ZScoreRadarPanel extends ConsumerWidget {
   }
 
   Widget _buildGeneralStatusBadge(double velocity) {
-    String text = "NÖTR";
+    String text = "NEUTRAL";
     Color color = Colors.white54;
     
-    if (velocity > 1.5) { text = "GÜÇLÜ ALIM"; color = Colors.greenAccent; }
-    else if (velocity > 0.5) { text = "ALIM BASKISI"; color = Colors.green; }
-    else if (velocity < -1.5) { text = "PANİK SATIŞ"; color = Colors.redAccent; }
-    else if (velocity < -0.5) { text = "SATIŞ BASKISI"; color = Colors.red; }
+    if (velocity > 1.5) { text = "STRONG BUY"; color = Colors.greenAccent; }
+    else if (velocity > 0.5) { text = "BUY PRESSURE"; color = Colors.green; }
+    else if (velocity < -1.5) { text = "PANIC SELL"; color = Colors.redAccent; }
+    else if (velocity < -0.5) { text = "SELL PRESSURE"; color = Colors.red; }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -214,6 +214,7 @@ class LatencyChartWidget extends StatelessWidget {
   }
 }
 
+// 🔥 CERRAHİ: Unutulan SlaHeatmapPanel Sınıfı Eklendi
 class SlaHeatmapPanel extends ConsumerWidget {
   const SlaHeatmapPanel({super.key});
 
@@ -255,10 +256,9 @@ class SlaHeatmapPanel extends ConsumerWidget {
   }
 }
 
-
 class PnLChartPainter extends CustomPainter {
-  final List<double> balanceHistory; // Mavi
-  final List<double> equityHistory;  // Sarı
+  final List<double> balanceHistory;
+  final List<double> equityHistory;
 
   PnLChartPainter(this.balanceHistory, this.equityHistory);
 
@@ -268,7 +268,6 @@ class PnLChartPainter extends CustomPainter {
     final gridPaint = Paint()..color = Colors.white.withOpacity(0.03)..strokeWidth = 1;
     for (int i = 1; i < 4; i++) { canvas.drawLine(Offset(0, size.height * (i / 4)), Offset(size.width, size.height * (i / 4)), gridPaint); }
 
-    // Min Max Değerleri her iki diziye göre hesapla
     final minBal = balanceHistory.reduce(min); final maxBal = balanceHistory.reduce(max);
     final minEq = equityHistory.reduce(min); final maxEq = equityHistory.reduce(max);
     final globalMin = min(minBal, minEq); final globalMax = max(maxBal, maxEq);
@@ -278,7 +277,6 @@ class PnLChartPainter extends CustomPainter {
 
     final dx = size.width / (balanceHistory.length > 1 ? balanceHistory.length - 1 : 1);
 
-    // 1. Çizgi: EQUITY (Özsermaye - Yüzen PnL dahil) - Sarı/Turuncu kesik veya silik çizgi
     final eqPath = Path();
     for (int i = 0; i < equityHistory.length; i++) {
       final x = i * dx;
@@ -293,7 +291,6 @@ class PnLChartPainter extends CustomPainter {
     final eqPaint = Paint()..color = Colors.yellowAccent.withOpacity(0.6)..strokeWidth = 1.5..style = PaintingStyle.stroke;
     canvas.drawPath(eqPath, eqPaint);
 
-    // 2. Çizgi: BALANCE (Gerçekleşen Kasa) - Kalın Mavi/Yeşil Çizgi
     final balPath = Path();
     for (int i = 0; i < balanceHistory.length; i++) {
       final x = i * dx;
@@ -327,7 +324,7 @@ class LatencyChartPainter extends CustomPainter {
       final lat = latencies[i];
       final x = i * (size.width / latencies.length);
       final y = size.height - ((lat / maxLat) * size.height);
-      Color barColor = lat > 50 ? Colors.redAccent : (lat > 20 ? Colors.blueAccent : Colors.greenAccent);
+      Color barColor = lat > 50 ? Colors.redAccent : (lat > 25 ? Colors.blueAccent : Colors.greenAccent);
       final rect = Rect.fromLTWH(x, y, actualBarWidth, size.height - y);
       canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(2)), Paint()..color = barColor);
     }

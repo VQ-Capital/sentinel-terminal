@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/terminal_stream.dart';
 
-// Noktaların geçmiş izlerini tutmak için basit bir hafıza (UI level)
 final Map<String, List<Offset>> _trailMap = {};
 
 class NeuralGalaxyPanel extends ConsumerWidget {
@@ -26,14 +25,21 @@ class NeuralGalaxyPanel extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("🌌 DECISION MANIFOLD", 
-                    style: TextStyle(color: Colors.blueAccent, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-                  Text("Vektörel Olasılık Haritası", style: TextStyle(color: Colors.white24, fontSize: 9)),
-                ],
+              // 🔥 CERRAHİ: Taşmayı önlemek için Expanded ve FittedBox eklendi
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text("🌌 ONNX 12D DECISION MANIFOLD", 
+                        style: TextStyle(color: Colors.blueAccent, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                    ),
+                    Text("Vektörel Olasılık Haritası", style: TextStyle(color: Colors.white24, fontSize: 9)),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               _buildStatusBadge(),
             ],
           ),
@@ -43,32 +49,27 @@ class NeuralGalaxyPanel extends ConsumerWidget {
               builder: (context, constraints) {
                 return Stack(
                   children: [
-                    // 1. Arka Plan: Karar Bölgeleri ve Grid (Statik)
                     CustomPaint(
                       size: Size(constraints.maxWidth, constraints.maxHeight),
                       painter: RadarBackgroundPainter(),
                     ),
                     
-                    // 2. Canlı İzleme ve Kuyruklar
                     ...vectors.entries.map((entry) {
                       final symbol = entry.key;
                       final vec = entry.value;
                       
-                      // Z-Score -> Koordinat dönüşümü (Clamp ile ekran dışına çıkış engellenir)
                       final double centerX = constraints.maxWidth / 2;
                       final double centerY = constraints.maxHeight / 2;
-                      final double x = (vec.priceVelocity * (centerX / 3)).clamp(-centerX, centerX) + centerX;
-                      final double y = (centerY - (vec.volumeImbalance * (centerY / 3))).clamp(-centerY, centerY);
+                      final double x = (vec.priceVelocity * (centerX / 3)).clamp(0.0, constraints.maxWidth);
+                      final double y = (centerY - (vec.volumeImbalance * (centerY / 3))).clamp(0.0, constraints.maxHeight);
 
-                      // İz (Trail) Mantığı
                       _trailMap.putIfAbsent(symbol, () => []);
                       final trail = _trailMap[symbol]!;
                       trail.add(Offset(x, y));
-                      if (trail.length > 8) trail.removeAt(0); // Sadece son 8 adım
+                      if (trail.length > 8) trail.removeAt(0);
 
                       return Stack(
                         children: [
-                          // Kuyruk İzi (Geçmiş)
                           ...trail.asMap().entries.map((trailEntry) {
                             final idx = trailEntry.key;
                             final pos = trailEntry.value;
@@ -85,7 +86,6 @@ class NeuralGalaxyPanel extends ConsumerWidget {
                               ),
                             );
                           }),
-                          // Ana Parlayan Nokta
                           AnimatedPositioned(
                             duration: const Duration(milliseconds: 500),
                             curve: Curves.easeOutCubic,
@@ -139,40 +139,36 @@ class NeuralGalaxyPanel extends ConsumerWidget {
 
   Widget _buildStatusBadge() {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.greenAccent, shape: BoxShape.circle)),
-        const SizedBox(width: 8),
-        const Text("LIVE MANIFOLD", style: TextStyle(color: Colors.greenAccent, fontSize: 9, fontWeight: FontWeight.bold)),
+        Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.greenAccent, shape: BoxShape.circle)),
+        const SizedBox(width: 4),
+        const Text("CUDA", style: TextStyle(color: Colors.greenAccent, fontSize: 8, fontWeight: FontWeight.bold)),
       ],
     );
   }
 }
 
-// HARİTAYI ANLATAN RESSAM (BACKGROUND PAINTER)
 class RadarBackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final paintLine = Paint()..color = Colors.white.withOpacity(0.05)..strokeWidth = 1;
-    final paintText = TextPainter(textDirection: TextDirection.ltr);
 
-    // Eksileri ve Artıları Çiz (Grid)
-    canvas.drawLine(Offset(0, center.dy), Offset(size.width, center.dy), paintLine); // X Ekseni
-    canvas.drawLine(Offset(center.dx, 0), Offset(center.dx, size.height), paintLine); // Y Ekseni
+    canvas.drawLine(Offset(0, center.dy), Offset(size.width, center.dy), paintLine);
+    canvas.drawLine(Offset(center.dx, 0), Offset(center.dx, size.height), paintLine);
 
-    // BÖLGE İSİMLERİ (Yatırımcıya Açıklama)
-    _drawZoneText(canvas, "BULLISH MOMENTUM", Offset(size.width - 120, 20), Colors.greenAccent.withOpacity(0.3));
-    _drawZoneText(canvas, "LIQUIDATION RISK", Offset(20, size.height - 30), Colors.redAccent.withOpacity(0.3));
-    _drawZoneText(canvas, "ABSORPTION", Offset(size.width - 100, size.height - 30), Colors.blueAccent.withOpacity(0.3));
-    _drawZoneText(canvas, "EXHAUSTION", Offset(20, 20), Colors.orangeAccent.withOpacity(0.3));
+    _drawZoneText(canvas, "Q1: POSITIVE DRIFT", Offset(size.width - 100, 10), Colors.greenAccent.withOpacity(0.3));
+    _drawZoneText(canvas, "Q3: NEGATIVE DRIFT", Offset(10, size.height - 20), Colors.redAccent.withOpacity(0.3));
+    _drawZoneText(canvas, "Q4: MEAN REV (BID)", Offset(size.width - 100, size.height - 20), Colors.blueAccent.withOpacity(0.3));
+    _drawZoneText(canvas, "Q2: MEAN REV (ASK)", Offset(10, 10), Colors.orangeAccent.withOpacity(0.3));
     
-    // Orta Nokta (Nötr)
     canvas.drawCircle(center, 4, Paint()..color = Colors.white10);
   }
 
   void _drawZoneText(Canvas canvas, String text, Offset offset, Color color) {
     final tp = TextPainter(
-      text: TextSpan(text: text, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+      text: TextSpan(text: text, style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
       textDirection: TextDirection.ltr,
     );
     tp.layout();

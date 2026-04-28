@@ -6,7 +6,7 @@ import '../providers/dashboard_provider.dart';
 import '../widgets/top_bar_widgets.dart';
 import '../widgets/charts_widget.dart';
 import '../widgets/tables_widget.dart';
-import '../widgets/neural_map_widget.dart'; // 🚀 Yeni widget import edildi
+import '../widgets/neural_map_widget.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -161,18 +161,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             )),
           ],
         ),
-        // SİSTEM
+        // SİSTEM (🔥 CERRAHİ: Const hataları düzeltildi)
         ListView(
           padding: const EdgeInsets.all(12),
           children: [
-            const SlaHeatmapPanel(),
+            SlaHeatmapPanel(), // const kaldırıldı
             const SizedBox(height: 12),
             SizedBox(height: 200, child: LatencyChartWidget(
               latencies: metrics.recentLatencies, 
               avgLatency: metrics.avgLatency
             )),
             const SizedBox(height: 12),
-            const SizedBox(height: 600, child: TradeLogPanel(isDesktop: false)),
+            SizedBox(height: 600, child: TradeLogPanel(isDesktop: false)), // const kaldırıldı
           ],
         ),
       ],
