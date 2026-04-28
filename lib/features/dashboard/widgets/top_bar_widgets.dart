@@ -1,4 +1,5 @@
 // ========== DOSYA: sentinel-terminal/lib/features/dashboard/widgets/top_bar_widgets.dart ==========
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,12 +7,44 @@ import 'package:http/http.dart' as http;
 import '../../../core/network/terminal_stream.dart';
 import '../providers/dashboard_provider.dart';
 
-class TerminalAppBar extends ConsumerWidget implements PreferredSizeWidget {
+class TerminalAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   final bool isDefensiveMode;
   const TerminalAppBar({super.key, required this.isDefensiveMode});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TerminalAppBar> createState() => _TerminalAppBarState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+class _TerminalAppBarState extends ConsumerState<TerminalAppBar> {
+  late Timer _timer;
+  String _utcTime = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _updateTime();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) => _updateTime());
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  // Zaman birimi tum servislerde ve ui da aynı gosterilmeli!!!!
+  void _updateTime() {
+    final now = DateTime.now();
+    setState(() {
+      _utcTime = "${now.toString()} ";
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isConnected = ref.watch(connectionStateProvider);
 
     return AppBar(
@@ -28,7 +61,15 @@ class TerminalAppBar extends ConsumerWidget implements PreferredSizeWidget {
             child: Text('SENTINEL', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 18)),
           ),
           const SizedBox(width: 16),
-          _buildSystemStatusBadge(isDefensiveMode),
+          _buildSystemStatusBadge(widget.isDefensiveMode),
+          const Spacer(),
+          // 🔥 CERRAHİ: UTC ZAMAN DAMGASI
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(4)),
+            child: Text(_utcTime, style: const TextStyle(color: Colors.white54, fontSize: 11, fontFamily: 'monospace', fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 16),
         ],
       ),
     );
@@ -51,9 +92,6 @@ class TerminalAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
 class MarketTickerTape extends ConsumerWidget {
@@ -107,7 +145,7 @@ class StatsPanel extends StatelessWidget {
             Expanded(flex: 2, child: _buildDrawdownCard()), const SizedBox(width: 12),
             Expanded(flex: 2, child: _buildSharpeCard()), const SizedBox(width: 12),
             Expanded(flex: 2, child: _buildSlaCard()), const SizedBox(width: 12),
-            Expanded(flex: 1, child: _buildDiagnoseButton(context)), const SizedBox(width: 8), // 🔥 YENİ
+            Expanded(flex: 1, child: _buildDiagnoseButton(context)), const SizedBox(width: 8),
             Expanded(flex: 2, child: _buildKillSwitch(context)),
           ],
         ),
@@ -121,7 +159,6 @@ class StatsPanel extends StatelessWidget {
     }
   }
 
-  // 🔥 CERRAHİ: toStringAsFixed(0) olan yerler toStringAsFixed(2) yapıldı! Artık kuruşlar görünecek.
   Widget _buildBalanceCard() => _smartStatCard(title: "GERÇEKLEŞEN (BAL)", value: "\$${metrics.displayBalance.toStringAsFixed(2)}", color: Colors.white, sub: "Kapalı Pozisyonlar", tooltip: "Kapatılmış işlemler sonucu oluşan net nakit bakiye.");
   Widget _buildEquityCard() => _smartStatCard(title: "ÖZSERMAYE (EQT)", value: "\$${metrics.displayEquity.toStringAsFixed(2)}", color: Colors.yellowAccent, sub: "Yüzen Dahil", tooltip: "Açık pozisyonların kâr/zararı dahil kasanın anlık toplam değeri.");
   Widget _buildDrawdownCard() => _smartStatCard(title: "MAX DRAWDOWN", value: "%${metrics.maxDrawdownPct.toStringAsFixed(2)}", color: metrics.maxDrawdownPct > 10 ? Colors.redAccent : Colors.greenAccent, sub: "En Yüksek Kayıp", tooltip: "Zirve noktadan itibaren kasanın yaşadığı maksimum erime oranı.");
@@ -147,7 +184,6 @@ class StatsPanel extends StatelessWidget {
     );
   }
 
-  // 🔥 YENİ: DIAGNOSE (KAPUTUN ALTI) BUTONU
   Widget _buildDiagnoseButton(BuildContext context) {
     return Tooltip(
       message: "Sistem Sağlık Raporu (Diagnose)",
@@ -181,7 +217,6 @@ class StatsPanel extends StatelessWidget {
     );
   }
 
-// API'den JSON çekip Ekranda Gösteren Fonksiyon
   void _showDiagnoseModal(BuildContext context) async {
     showDialog(
       context: context,
@@ -190,7 +225,6 @@ class StatsPanel extends StatelessWidget {
     );
 
     try {
-      // 🔥 CERRAHİ: WebSocket URL'sinden IP ve Port'u dinamik olarak çıkarıyoruz!
       const envWsUrl = String.fromEnvironment('WS_URL', defaultValue: '');
       String apiUrl;
 
@@ -204,10 +238,9 @@ class StatsPanel extends StatelessWidget {
 
       final response = await http.get(Uri.parse(apiUrl)).timeout(const Duration(seconds: 3));
       
-      if (context.mounted) Navigator.pop(context); // Yükleniyoru kapat
+      if (context.mounted) Navigator.pop(context);
 
       if (response.statusCode == 200) {
-        // UTF-8 Desteği eklendi (Türkçe karakterlerin bozulmaması için)
         final data = jsonDecode(utf8.decode(response.bodyBytes));
         if (context.mounted) {
           showDialog(
@@ -256,5 +289,4 @@ class StatsPanel extends StatelessWidget {
       ),
     );
   }
-
 }

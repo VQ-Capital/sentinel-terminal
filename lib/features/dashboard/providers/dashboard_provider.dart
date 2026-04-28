@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/terminal_stream.dart';
 
-// Başlangıç bakiyesini ilk gelen veriden yakalamak için global değişken (veya ayrı bir provider)
+// Başlangıç bakiyesini ilk gelen veriden yakalamak için global değişken
 double? _capturedInitialBalance;
 
 class DashboardMetrics {
@@ -36,8 +36,6 @@ final dashboardMetricsProvider = Provider<DashboardMetrics>((ref) {
   final marketPrices = ref.watch(marketDataNotifierProvider);
   final equityData = ref.watch(equityProvider);
 
-  // 🚀 DÜZELTME: Sabit 100K değeri kaldırıldı!
-  // Eğer henüz veri gelmediyse 0, geldiyse ilk gelen bakiyeyi baz alıyoruz.
   if (_capturedInitialBalance == null && equityData != null) {
     _capturedInitialBalance = equityData.availableMarginUsd;
   }
@@ -72,30 +70,33 @@ final dashboardMetricsProvider = Provider<DashboardMetrics>((ref) {
     if (r.side == "SELL" && posQty > 0.0) {
       double closeQty = min(r.quantity, posQty);
       posQty -= closeQty;
-      if (posQty <= 0.000001) avgPrice = 0.0;
     } else if (r.side == "BUY" && posQty < 0.0) {
       double closeQty = min(r.quantity, posQty.abs());
       posQty += closeQty;
-      if (posQty.abs() <= 0.000001) avgPrice = 0.0;
     } else {
       double newQty = r.side == "BUY" ? posQty + r.quantity : posQty - r.quantity;
       double totalValue = (posQty.abs() * avgPrice) + (r.quantity * r.executionPrice);
       avgPrice = totalValue / newQty.abs();
       posQty = newQty;
     }
-    positions[r.symbol] = posQty;
-    avgPrices[r.symbol] = avgPrice;
+
+    // 🔥 CERRAHİ: Hayalet Float'ları temizler. Pozisyon kapandıysa RAM'den sil.
+    if (posQty.abs() <= 0.000001) {
+      positions.remove(r.symbol);
+      avgPrices.remove(r.symbol);
+    } else {
+      positions[r.symbol] = posQty;
+      avgPrices[r.symbol] = avgPrice;
+    }
   }
 
   double winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0.0;
-  
-  // Realized PnL: Mevcut Bakiye - Başlangıç Bakiyesi
   double currentBalance = equityData?.availableMarginUsd ?? localBalance;
 
   return DashboardMetrics(
     displayBalance: currentBalance,
     displayEquity: equityData?.totalEquityUsd ?? currentBalance,
-    displayRealizedPnL: currentBalance - initialBalance, // 🚀 ARTIK DİNAMİK: 1000 - 1000 = 0
+    displayRealizedPnL: currentBalance - initialBalance,
     displayUnrealizedPnL: equityData?.totalUnrealizedPnl ?? 0.0,
     winRate: winRate,
     avgLatency: avgLatency,
