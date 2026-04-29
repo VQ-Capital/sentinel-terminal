@@ -302,8 +302,32 @@ class PnLChartPainter extends CustomPainter {
         balPath.cubicTo(prevX + (dx / 2), prevY, prevX + (dx / 2), y, x, y);
       }
     }
-    final balPaint = Paint()..color = Colors.blueAccent..strokeWidth = 3.0..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
-    canvas.drawPath(balPath, balPaint);
+    
+    // --- 🔥 CERRAHİ: YÜKSEK GÖRÜNÜRLÜKLÜ ETİKETLER ---
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
+
+    // 1. Peak (Zirve) Etiketi - Sol Üstte Dev Puntolarla
+    textPainter.text = TextSpan(
+      text: "PEAK: \$${globalMax.toStringAsFixed(2)}", 
+      style: TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.w900, backgroundColor: Colors.black45)
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, const Offset(15, 40));
+
+    // 2. Current (Güncel) Etiketi - Canlı Ucun Yanında
+    final lastX = size.width;
+    final lastY = size.height - (((equityHistory.last - paddedMin) / paddedRange) * size.height);
+    
+    // Canlı ucun yanına parlayan bir nokta
+    canvas.drawCircle(Offset(lastX, lastY), 4, Paint()..color = Colors.yellowAccent..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
+    
+    textPainter.text = TextSpan(
+      text: "  LIVE: \$${equityHistory.last.toStringAsFixed(2)}", 
+      style: TextStyle(color: Colors.yellowAccent, fontSize: 13, fontWeight: FontWeight.bold, backgroundColor: Colors.black)
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(lastX - 100, lastY - 20));
+
   }
   @override bool shouldRepaint(covariant PnLChartPainter oldDelegate) => true;
 }
