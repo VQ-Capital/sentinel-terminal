@@ -54,7 +54,7 @@ clean:
 
 run:
 	@echo "🚀 Running the application..."
-	flutter run
+	flutter run -d chrome > /dev/null 2>&1 &
 
 run-dev:
 	flutter run --debug	
