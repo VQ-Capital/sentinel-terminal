@@ -93,3 +93,30 @@ final $typed_data.Uint8List executionReportDescriptor = $convert.base64Decode(
     'KAFSCmNvbW1pc3Npb24SHQoKbGF0ZW5jeV9tcxgIIAEoA1IJbGF0ZW5jeU1zEhwKCXRpbWVzdG'
     'FtcBgJIAEoA1IJdGltZXN0YW1wEiEKDGlzX3NpbXVsYXRlZBgKIAEoCFILaXNTaW11bGF0ZWQS'
     'GQoIb3JkZXJfaWQYCyABKAlSB29yZGVySWQ=');
+
+@$core.Deprecated('Use executionRejectionDescriptor instead')
+const ExecutionRejection$json = {
+  '1': 'ExecutionRejection',
+  '2': [
+    {'1': 'symbol', '3': 1, '4': 1, '5': 9, '10': 'symbol'},
+    {'1': 'original_side', '3': 2, '4': 1, '5': 9, '10': 'originalSide'},
+    {
+      '1': 'intended_quantity',
+      '3': 3,
+      '4': 1,
+      '5': 1,
+      '10': 'intendedQuantity'
+    },
+    {'1': 'reason_code', '3': 4, '4': 1, '5': 9, '10': 'reasonCode'},
+    {'1': 'description', '3': 5, '4': 1, '5': 9, '10': 'description'},
+    {'1': 'timestamp', '3': 6, '4': 1, '5': 3, '10': 'timestamp'},
+  ],
+};
+
+/// Descriptor for `ExecutionRejection`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List executionRejectionDescriptor = $convert.base64Decode(
+    'ChJFeGVjdXRpb25SZWplY3Rpb24SFgoGc3ltYm9sGAEgASgJUgZzeW1ib2wSIwoNb3JpZ2luYW'
+    'xfc2lkZRgCIAEoCVIMb3JpZ2luYWxTaWRlEisKEWludGVuZGVkX3F1YW50aXR5GAMgASgBUhBp'
+    'bnRlbmRlZFF1YW50aXR5Eh8KC3JlYXNvbl9jb2RlGAQgASgJUgpyZWFzb25Db2RlEiAKC2Rlc2'
+    'NyaXB0aW9uGAUgASgJUgtkZXNjcmlwdGlvbhIcCgl0aW1lc3RhbXAYBiABKANSCXRpbWVzdGFt'
+    'cA==');

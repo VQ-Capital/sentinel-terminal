@@ -7,7 +7,8 @@ import 'package:http/http.dart' as http;
 import '../../../core/network/terminal_stream.dart';
 import '../providers/dashboard_provider.dart';
 
-class TerminalAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
+class TerminalAppBar extends ConsumerStatefulWidget
+    implements PreferredSizeWidget {
   final bool isDefensiveMode;
   const TerminalAppBar({super.key, required this.isDefensiveMode});
 
@@ -26,7 +27,10 @@ class _TerminalAppBarState extends ConsumerState<TerminalAppBar> {
   void initState() {
     super.initState();
     _updateTime();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) => _updateTime());
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (timer) => _updateTime(),
+    );
   }
 
   @override
@@ -50,20 +54,40 @@ class _TerminalAppBarState extends ConsumerState<TerminalAppBar> {
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(isConnected ? Icons.lan : Icons.lan_outlined,
-            color: isConnected ? Colors.greenAccent : Colors.redAccent, size: 16),
+          Icon(
+            isConnected ? Icons.lan : Icons.lan_outlined,
+            color: isConnected ? Colors.greenAccent : Colors.redAccent,
+            size: 16,
+          ),
           const SizedBox(width: 8),
           const Flexible(
-            child: Text('SENTINEL', 
-              style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2, fontSize: 16)),
+            child: Text(
+              'SENTINEL',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.2,
+                fontSize: 16,
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           _buildSystemStatusBadge(widget.isDefensiveMode),
           const Spacer(),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(4)),
-            child: Text(_utcTime, style: const TextStyle(color: Colors.white54, fontSize: 10, fontFamily: 'monospace', fontWeight: FontWeight.bold)),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              _utcTime,
+              style: const TextStyle(
+                color: Colors.white54,
+                fontSize: 10,
+                fontFamily: 'monospace',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -74,11 +98,23 @@ class _TerminalAppBarState extends ConsumerState<TerminalAppBar> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-          color: isDefensive ? Colors.orange.withOpacity(0.15) : Colors.blueAccent.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: isDefensive ? Colors.orangeAccent : Colors.blueAccent, width: 0.5)),
-      child: Text(isDefensive ? "DEFENSIVE" : "ONNX LIVE", 
-        style: TextStyle(color: isDefensive ? Colors.orangeAccent : Colors.blueAccent, fontSize: 8, fontWeight: FontWeight.bold)),
+        color: isDefensive
+            ? Colors.orange.withValues(alpha: 0.15)
+            : Colors.blueAccent.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: isDefensive ? Colors.orangeAccent : Colors.blueAccent,
+          width: 0.5,
+        ),
+      ),
+      child: Text(
+        isDefensive ? "DEFENSIVE" : "ONNX LIVE",
+        style: TextStyle(
+          color: isDefensive ? Colors.orangeAccent : Colors.blueAccent,
+          fontSize: 8,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }
@@ -89,10 +125,19 @@ class MarketTickerTape extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final marketPrices = ref.watch(marketDataNotifierProvider);
     return Container(
-      height: 32, width: double.infinity,
-      decoration: const BoxDecoration(color: Color(0xFF0D0D0F), border: Border(bottom: BorderSide(color: Colors.white10, width: 1))),
+      height: 32,
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: Color(0xFF0D0D0F),
+        border: Border(bottom: BorderSide(color: Colors.white10, width: 1)),
+      ),
       child: marketPrices.isEmpty
-          ? const Center(child: Text("Borsa Veri Akışı Bekleniyor...", style: TextStyle(color: Colors.white38, fontSize: 10)))
+          ? const Center(
+              child: Text(
+                "Borsa Veri Akışı Bekleniyor...",
+                style: TextStyle(color: Colors.white38, fontSize: 10),
+              ),
+            )
           : ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: marketPrices.length,
@@ -103,10 +148,27 @@ class MarketTickerTape extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12.0),
                   child: Center(
                     child: RichText(
-                      text: TextSpan(children: [
-                        TextSpan(text: "${symbol.replaceAll('USDT', '')} ", style: const TextStyle(color: Colors.white54, fontWeight: FontWeight.bold, fontSize: 11)),
-                        TextSpan(text: price.toStringAsFixed(2), style: const TextStyle(color: Colors.greenAccent, fontFamily: 'monospace', fontWeight: FontWeight.bold, fontSize: 12)),
-                      ]),
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: "${symbol.replaceAll('USDT', '')} ",
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                          TextSpan(
+                            text: price.toStringAsFixed(2),
+                            style: const TextStyle(
+                              color: Colors.greenAccent,
+                              fontFamily: 'monospace',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -129,22 +191,63 @@ class StatsPanel extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(flex: 2, child: _smartStatCard(title: "BALANCE", value: "\$${metrics.displayBalance.toStringAsFixed(2)}", color: Colors.white, sub: "Realized")), 
+            Expanded(
+              flex: 2,
+              child: _smartStatCard(
+                title: "BALANCE",
+                value: "\$${metrics.displayBalance.toStringAsFixed(2)}",
+                color: Colors.white,
+                sub: "Realized",
+              ),
+            ),
             const SizedBox(width: 6),
-            Expanded(flex: 2, child: _smartStatCard(title: "EQUITY", value: "\$${metrics.displayEquity.toStringAsFixed(2)}", color: Colors.yellowAccent, sub: "Mark-to-Market")), 
+            Expanded(
+              flex: 2,
+              child: _smartStatCard(
+                title: "EQUITY",
+                value: "\$${metrics.displayEquity.toStringAsFixed(2)}",
+                color: Colors.yellowAccent,
+                sub: "Mark-to-Market",
+              ),
+            ),
             const SizedBox(width: 6),
-            Expanded(flex: 2, child: _smartStatCard(title: "MAX DRAWDOWN", value: "%${metrics.maxDrawdownPct.toStringAsFixed(2)}", color: metrics.maxDrawdownPct > 5 ? Colors.redAccent : Colors.greenAccent, sub: "Risk Limit")), 
+            Expanded(
+              flex: 2,
+              child: _smartStatCard(
+                title: "MAX DRAWDOWN",
+                value: "%${metrics.maxDrawdownPct.toStringAsFixed(2)}",
+                color: metrics.maxDrawdownPct > 5
+                    ? Colors.redAccent
+                    : Colors.greenAccent,
+                sub: "Risk Limit",
+              ),
+            ),
             const SizedBox(width: 6),
-            Expanded(flex: 2, child: _smartStatCard(title: "ALPHA SCORE", value: metrics.sharpeRatio.toStringAsFixed(2), color: Colors.purpleAccent, sub: "Confidence: 99.4%")), 
+            Expanded(
+              flex: 2,
+              child: _smartStatCard(
+                title: "ALPHA SCORE",
+                value: metrics.sharpeRatio.toStringAsFixed(2),
+                color: Colors.purpleAccent,
+                sub: "Confidence: 99.4%",
+              ),
+            ),
             const SizedBox(width: 6),
-            Expanded(flex: 2, child: _smartStatCard(title: "LATENCY", value: "${metrics.avgLatency}ms", color: Colors.cyanAccent, sub: "NATS Hop")), 
-            
-            const SizedBox(width: 12), // Boşluk arttırıldı
-            
-            // --- 🔥 CERRAHİ: KONTROL DÜĞMELERİ ÜÇLÜSÜ ---
-            Expanded(flex: 1, child: _buildDiagnoseButton(context)), 
+            Expanded(
+              flex: 2,
+              child: _smartStatCard(
+                title: "LATENCY",
+                value: "${metrics.avgLatency}ms",
+                color: Colors.cyanAccent,
+                sub: "NATS Hop",
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            Expanded(flex: 1, child: _buildDiagnoseButton(context)),
             const SizedBox(width: 6),
-            Expanded(flex: 1, child: _buildTearsheetButton(context, metrics)), // <-- BURASI EKLENDİ!
+            Expanded(flex: 1, child: _buildTearsheetButton(context, metrics)),
             const SizedBox(width: 6),
             Expanded(flex: 1, child: _buildKillSwitch(context)),
           ],
@@ -152,44 +255,93 @@ class StatsPanel extends StatelessWidget {
       );
     } else {
       return GridView.count(
-        shrinkWrap: true, crossAxisCount: 2, crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 2.0,
+        shrinkWrap: true,
+        crossAxisCount: 2,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 2.0,
         physics: const NeverScrollableScrollPhysics(),
         children: [
-          _buildBalanceCard(), _buildEquityCard(), 
-          _buildDrawdownCard(), _buildSharpeCard(),
-          _buildTearsheetButton(context, metrics)
+          _buildBalanceCard(),
+          _buildEquityCard(),
+          _buildDrawdownCard(),
+          _buildSharpeCard(),
+          _buildTearsheetButton(context, metrics),
         ],
       );
     }
   }
 
-  Widget _buildBalanceCard() => _smartStatCard(title: "BALANCE", value: "\$${metrics.displayBalance.toStringAsFixed(2)}", color: Colors.white, sub: "Kapalı PnL");
+  Widget _buildBalanceCard() => _smartStatCard(
+    title: "BALANCE",
+    value: "\$${metrics.displayBalance.toStringAsFixed(2)}",
+    color: Colors.white,
+    sub: "Kapalı PnL",
+  );
+  Widget _buildEquityCard() => _smartStatCard(
+    title: "EQUITY",
+    value: "\$${metrics.displayEquity.toStringAsFixed(2)}",
+    color: Colors.yellowAccent,
+    sub: "Yüzen Dahil",
+  );
+  Widget _buildDrawdownCard() => _smartStatCard(
+    title: "DRAWDOWN",
+    value: "%${metrics.maxDrawdownPct.toStringAsFixed(2)}",
+    color: Colors.redAccent,
+    sub: "Max Erime",
+  );
+  Widget _buildSharpeCard() => _smartStatCard(
+    title: "SHARPE",
+    value: metrics.sharpeRatio.toStringAsFixed(2),
+    color: Colors.blueAccent,
+    sub: "Alpha Score",
+  );
 
-  Widget _buildEquityCard() => _smartStatCard(title: "EQUITY", value: "\$${metrics.displayEquity.toStringAsFixed(2)}", color: Colors.yellowAccent, sub: "Yüzen Dahil");
-  
-  Widget _buildDrawdownCard() => _smartStatCard(title: "DRAWDOWN", value: "%${metrics.maxDrawdownPct.toStringAsFixed(2)}", color: Colors.redAccent, sub: "Max Erime");
-  
-  Widget _buildSharpeCard() => _smartStatCard(title: "SHARPE", value: metrics.sharpeRatio.toStringAsFixed(2), color: Colors.blueAccent, sub: "Alpha Score");
+  // 🔥 CERRAHİ DÜZELTME: Kullanılmayan `_buildSlaCard` metodu kaldırıldı.
 
-  
-  
-  Widget _buildSlaCard() => _smartStatCard(title: "SLA", value: "${metrics.avgLatency}ms", color: metrics.avgLatency > 50 ? Colors.redAccent : Colors.greenAccent, sub: "Latency");
-
-  Widget _smartStatCard({required String title, required String value, required Color color, required String sub}) {
+  Widget _smartStatCard({
+    required String title,
+    required String value,
+    required Color color,
+    required String sub,
+  }) {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFF18181B), 
-        borderRadius: BorderRadius.circular(8), 
-        border: Border.all(color: color.withOpacity(0.1), width: 1),
+        color: const Color(0xFF18181B),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.1), width: 1),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white54, fontSize: 8, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white54,
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
           const SizedBox(height: 2),
-          FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w900, fontFamily: 'monospace'))),
-          Text(sub, style: TextStyle(color: color.withOpacity(0.3), fontSize: 8)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ),
+          Text(
+            sub,
+            style: TextStyle(color: color.withValues(alpha: 0.3), fontSize: 8),
+          ),
         ],
       ),
     );
@@ -200,15 +352,22 @@ class StatsPanel extends StatelessWidget {
       onTap: () => _showTearsheetModal(context, metrics),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.purpleAccent.withOpacity(0.1),
+          color: Colors.purpleAccent.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.purpleAccent.withOpacity(0.3))
+          border: Border.all(color: Colors.purpleAccent.withValues(alpha: 0.3)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
             Icon(Icons.description, color: Colors.purpleAccent, size: 18),
-            Text("REPORT", style: TextStyle(color: Colors.purpleAccent, fontSize: 7, fontWeight: FontWeight.w900)),
+            Text(
+              "REPORT",
+              style: TextStyle(
+                color: Colors.purpleAccent,
+                fontSize: 7,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
           ],
         ),
       ),
@@ -224,7 +383,14 @@ class StatsPanel extends StatelessWidget {
           children: const [
             Icon(Icons.analytics, color: Colors.purpleAccent),
             SizedBox(width: 12),
-            Text("QUANTITATIVE AUDIT REPORT", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+            Text(
+              "QUANTITATIVE AUDIT REPORT",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
         content: SizedBox(
@@ -232,23 +398,42 @@ class StatsPanel extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _reportRow("Total Closed Trades", "${metrics.balanceHistory.length - 1}"),
+              _reportRow(
+                "Total Closed Trades",
+                "${metrics.balanceHistory.length - 1}",
+              ),
               _reportRow("Win Rate", "${metrics.winRate.toStringAsFixed(2)}%"),
-              _reportRow("Net PnL", "\$${metrics.displayRealizedPnL.toStringAsFixed(4)}"),
-              _reportRow("Profit Factor", "24.61"), // QuestDB'den gelen gerçek veri
-              _reportRow("Max Drawdown", "%${metrics.maxDrawdownPct.toStringAsFixed(2)}"),
-              _reportRow("Alpha (Standardized)", "0.97"), // Raporlanan gerçek Sharpe
+              _reportRow(
+                "Net PnL",
+                "\$${metrics.displayRealizedPnL.toStringAsFixed(4)}",
+              ),
+              _reportRow("Profit Factor", "24.61"),
+              _reportRow(
+                "Max Drawdown",
+                "%${metrics.maxDrawdownPct.toStringAsFixed(2)}",
+              ),
+              _reportRow("Alpha (Standardized)", "0.97"),
               const Divider(color: Colors.white10, height: 32),
-              const Text("HFT Engine Veracity: 99.8%", style: TextStyle(color: Colors.greenAccent, fontSize: 10, fontStyle: FontStyle.italic)),
+              const Text(
+                "HFT Engine Veracity: 99.8%",
+                style: TextStyle(
+                  color: Colors.greenAccent,
+                  fontSize: 10,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("CLOSE", style: TextStyle(color: Colors.white54))),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("CLOSE", style: TextStyle(color: Colors.white54)),
+          ),
         ],
       ),
     );
-  }  
+  }
 
   Widget _reportRow(String label, String value) {
     return Padding(
@@ -256,27 +441,45 @@ class StatsPanel extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12)),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white54, fontSize: 12),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'monospace',
+            ),
+          ),
         ],
       ),
     );
-  }  
+  }
 
   Widget _buildDiagnoseButton(BuildContext context) {
     return InkWell(
       onTap: () => _showDiagnoseModal(context),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.blueAccent.withOpacity(0.1),
+          color: Colors.blueAccent.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.blueAccent.withOpacity(0.3))
+          border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.3)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
             Icon(Icons.monitor_heart, color: Colors.blueAccent, size: 18),
-            Text("HEALTH", style: TextStyle(color: Colors.blueAccent, fontSize: 7, fontWeight: FontWeight.w900)),
+            Text(
+              "HEALTH",
+              style: TextStyle(
+                color: Colors.blueAccent,
+                fontSize: 7,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
           ],
         ),
       ),
@@ -285,24 +488,37 @@ class StatsPanel extends StatelessWidget {
 
   Widget _buildKillSwitch(BuildContext context) {
     return InkWell(
-      onLongPress: () { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("🚨 KILL SWITCH!"), backgroundColor: Colors.redAccent)); },
+      onLongPress: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("🚨 KILL SWITCH!"),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.redAccent.withOpacity(0.1), 
-          borderRadius: BorderRadius.circular(8), 
-          border: Border.all(color: Colors.redAccent.withOpacity(0.4))
+          color: Colors.redAccent.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, 
+          mainAxisAlignment: MainAxisAlignment.center,
           children: const [
             Icon(Icons.power_settings_new, color: Colors.redAccent, size: 20),
-            Text("STOP", style: TextStyle(color: Colors.redAccent, fontSize: 8, fontWeight: FontWeight.w900)),
-          ]
+            Text(
+              "STOP",
+              style: TextStyle(
+                color: Colors.redAccent,
+                fontSize: 8,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-
 
   void _showDiagnoseModal(BuildContext context) async {
     showDialog(
@@ -323,8 +539,10 @@ class StatsPanel extends StatelessWidget {
         apiUrl = 'http://$host:18080/api/v1/diagnostics';
       }
 
-      final response = await http.get(Uri.parse(apiUrl)).timeout(const Duration(seconds: 3));
-      
+      final response = await http
+          .get(Uri.parse(apiUrl))
+          .timeout(const Duration(seconds: 3));
+
       if (context.mounted) Navigator.pop(context);
 
       if (response.statusCode == 200) {
@@ -334,32 +552,70 @@ class StatsPanel extends StatelessWidget {
             context: context,
             builder: (context) => AlertDialog(
               backgroundColor: const Color(0xFF18181B),
-              title: const Text("⚙️ KANTİTATİF SİSTEM SAĞLIĞI", style: TextStyle(color: Colors.white, fontSize: 16)),
+              title: const Text(
+                "⚙️ KANTİTATİF SİSTEM SAĞLIĞI",
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _diagRow("Sistem Durumu:", data['status'], Colors.greenAccent),
-                  _diagRow("Uptime (Açık Kalma):", "${data['uptime_seconds']} saniye", Colors.white70),
-                  _diagRow("Aktif İzleyici Sayısı:", "${data['active_ui_connections']}", Colors.white70),
-                  _diagRow("Önbellek (Rapor):", "${data['cached_reports']} işlem", Colors.white70),
+                  _diagRow(
+                    "Sistem Durumu:",
+                    data['status'],
+                    Colors.greenAccent,
+                  ),
+                  _diagRow(
+                    "Uptime (Açık Kalma):",
+                    "${data['uptime_seconds']} saniye",
+                    Colors.white70,
+                  ),
+                  _diagRow(
+                    "Aktif İzleyici Sayısı:",
+                    "${data['active_ui_connections']}",
+                    Colors.white70,
+                  ),
+                  _diagRow(
+                    "Önbellek (Rapor):",
+                    "${data['cached_reports']} işlem",
+                    Colors.white70,
+                  ),
                   const Divider(color: Colors.white24),
-                  Text("Sistem Mesajı:\n${data['message']}", style: const TextStyle(color: Colors.blueAccent, fontSize: 12, fontStyle: FontStyle.italic)),
+                  Text(
+                    "Sistem Mesajı:\n${data['message']}",
+                    style: const TextStyle(
+                      color: Colors.blueAccent,
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text("KAPAT", style: TextStyle(color: Colors.white54))),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    "KAPAT",
+                    style: TextStyle(color: Colors.white54),
+                  ),
+                ),
               ],
             ),
           );
         }
       } else {
-        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("⚠️ Diagnose API Yanıt Vermedi!")));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("🚨 Hata: ${response.reasonPhrase}")),
+          );
+        }
       }
     } catch (e) {
       if (context.mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("🚨 Hata: Sunucuya Ulaşılamadı")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("🚨 Hata: Sunucuya Ulaşılamadı")),
+        );
       }
     }
   }
@@ -370,8 +626,19 @@ class StatsPanel extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white54, fontSize: 13)),
-          Text(value, style: TextStyle(color: vColor, fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white54, fontSize: 13),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: vColor,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'monospace',
+            ),
+          ),
         ],
       ),
     );

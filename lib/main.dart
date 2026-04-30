@@ -25,9 +25,10 @@ class VQTerminalApp extends StatelessWidget {
         cardColor: const Color(0xFF18181B),
         tooltipTheme: TooltipThemeData(
           decoration: BoxDecoration(
-              color: Colors.grey[900],
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: Colors.white24)),
+            color: Colors.grey[900],
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: Colors.white24),
+          ),
           textStyle: const TextStyle(color: Colors.white, fontSize: 12),
           padding: const EdgeInsets.all(12),
           waitDuration: const Duration(milliseconds: 200),

@@ -23,11 +23,20 @@ class DashboardMetrics {
   final double sharpeRatio;
 
   DashboardMetrics({
-    required this.displayBalance, required this.displayEquity, required this.displayRealizedPnL,
-    required this.displayUnrealizedPnL, required this.winRate, required this.avgLatency,
-    required this.isDefensiveMode, required this.balanceHistory, required this.equityHistory,
-    required this.recentLatencies, required this.positions, required this.avgPrices,
-    required this.maxDrawdownPct, required this.sharpeRatio,
+    required this.displayBalance,
+    required this.displayEquity,
+    required this.displayRealizedPnL,
+    required this.displayUnrealizedPnL,
+    required this.winRate,
+    required this.avgLatency,
+    required this.isDefensiveMode,
+    required this.balanceHistory,
+    required this.equityHistory,
+    required this.recentLatencies,
+    required this.positions,
+    required this.avgPrices,
+    required this.maxDrawdownPct,
+    required this.sharpeRatio,
   });
 }
 
@@ -38,19 +47,28 @@ final dashboardMetricsProvider = Provider<DashboardMetrics>((ref) {
   if (_capturedInitialBalance == null && equityData != null) {
     _capturedInitialBalance = equityData.availableMarginUsd;
   }
-  
-  final double initialBalance = _capturedInitialBalance ?? (equityData?.availableMarginUsd ?? 0.0);
+
+  final double initialBalance =
+      _capturedInitialBalance ?? (equityData?.availableMarginUsd ?? 0.0);
 
   double localBalance = initialBalance;
   List<double> balanceHistory = [initialBalance];
   List<double> equityHistory = [initialBalance];
   Map<String, double> positions = {};
   Map<String, double> avgPrices = {};
-  int closedTrades = 0; 
+  int closedTrades = 0;
   int winningTrades = 0;
 
-  List<int> recentLatencies = reports.take(100).map((r) => r.latencyMs.toInt()).toList().reversed.toList();
-  int avgLatency = recentLatencies.isEmpty ? 0 : (recentLatencies.reduce((a, b) => a + b) / recentLatencies.length).round();
+  List<int> recentLatencies = reports
+      .take(100)
+      .map((r) => r.latencyMs.toInt())
+      .toList()
+      .reversed
+      .toList();
+  int avgLatency = recentLatencies.isEmpty
+      ? 0
+      : (recentLatencies.reduce((a, b) => a + b) / recentLatencies.length)
+            .round();
 
   for (var r in reports.reversed) {
     localBalance += r.realizedPnl;
@@ -59,8 +77,9 @@ final dashboardMetricsProvider = Provider<DashboardMetrics>((ref) {
 
     double posQty = positions[r.symbol] ?? 0.0;
     double avgPrice = avgPrices[r.symbol] ?? 0.0;
-    bool isClosing = (r.side == "SELL" && posQty > 0.0) || (r.side == "BUY" && posQty < 0.0);
-    
+    bool isClosing =
+        (r.side == "SELL" && posQty > 0.0) || (r.side == "BUY" && posQty < 0.0);
+
     if (isClosing) {
       closedTrades++;
       if (r.realizedPnl > 0) winningTrades++;
@@ -73,8 +92,11 @@ final dashboardMetricsProvider = Provider<DashboardMetrics>((ref) {
       double closeQty = min(r.quantity, posQty.abs());
       posQty += closeQty;
     } else {
-      double newQty = r.side == "BUY" ? posQty + r.quantity : posQty - r.quantity;
-      double totalValue = (posQty.abs() * avgPrice) + (r.quantity * r.executionPrice);
+      double newQty = r.side == "BUY"
+          ? posQty + r.quantity
+          : posQty - r.quantity;
+      double totalValue =
+          (posQty.abs() * avgPrice) + (r.quantity * r.executionPrice);
       avgPrice = totalValue / newQty.abs();
       posQty = newQty;
     }
@@ -89,7 +111,9 @@ final dashboardMetricsProvider = Provider<DashboardMetrics>((ref) {
     }
   }
 
-  double winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0.0;
+  double winRate = closedTrades > 0
+      ? (winningTrades / closedTrades) * 100
+      : 0.0;
   double currentBalance = equityData?.availableMarginUsd ?? localBalance;
 
   return DashboardMetrics(

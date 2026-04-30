@@ -14,7 +14,6 @@ import 'dart:core' as $core;
 
 import 'package:protobuf/protobuf.dart' as $pb;
 
-/// Sinyal Yönü
 class TradeSignal_SignalType extends $pb.ProtobufEnum {
   static const TradeSignal_SignalType SIGNAL_TYPE_UNSPECIFIED =
       TradeSignal_SignalType._(

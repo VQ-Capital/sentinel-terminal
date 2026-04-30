@@ -21,9 +21,6 @@ export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
 export 'execution.pbenum.dart';
 
-/// TradeSignal (Alım-Satım Sinyali)
-/// sentinel-inference (AI Motoru) tarafından üretilir ve NATS (signal.trade.*) kanalına basılır.
-/// Geçmiş vektörlerle olan %95+ benzerlik (Cosine Similarity) sonucunda ortaya çıkar.
 class TradeSignal extends $pb.GeneratedMessage {
   factory TradeSignal({
     $core.String? symbol,
@@ -141,9 +138,6 @@ class TradeSignal extends $pb.GeneratedMessage {
   void clearReason() => $_clearField(6);
 }
 
-/// ExecutionReport (İşlem Gerçekleşme Raporu)
-/// sentinel-execution tarafından üretilir. Emrin borsada (veya Gölge Borsada)
-/// tam olarak hangi fiyattan, ne kadar komisyonla gerçekleştiğini bildirir.
 class ExecutionReport extends $pb.GeneratedMessage {
   factory ExecutionReport({
     $core.String? symbol,
@@ -317,6 +311,124 @@ class ExecutionReport extends $pb.GeneratedMessage {
   $core.bool hasOrderId() => $_has(10);
   @$pb.TagNumber(11)
   void clearOrderId() => $_clearField(11);
+}
+
+/// 🔥 YENİ EKLENEN PROTOKOL: Root Cause Analysis (RCA)
+/// sentinel-execution bir sinyali işleme dökmediğinde (Risk limiti, Cooldown, SLA ihlali)
+/// NATS üzerinden sebebini AI Optimizer'a ve Terminal'e bildirir.
+class ExecutionRejection extends $pb.GeneratedMessage {
+  factory ExecutionRejection({
+    $core.String? symbol,
+    $core.String? originalSide,
+    $core.double? intendedQuantity,
+    $core.String? reasonCode,
+    $core.String? description,
+    $fixnum.Int64? timestamp,
+  }) {
+    final result = create();
+    if (symbol != null) result.symbol = symbol;
+    if (originalSide != null) result.originalSide = originalSide;
+    if (intendedQuantity != null) result.intendedQuantity = intendedQuantity;
+    if (reasonCode != null) result.reasonCode = reasonCode;
+    if (description != null) result.description = description;
+    if (timestamp != null) result.timestamp = timestamp;
+    return result;
+  }
+
+  ExecutionRejection._();
+
+  factory ExecutionRejection.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ExecutionRejection.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ExecutionRejection',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'sentinel.execution.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'symbol')
+    ..aOS(2, _omitFieldNames ? '' : 'originalSide')
+    ..aD(3, _omitFieldNames ? '' : 'intendedQuantity')
+    ..aOS(4, _omitFieldNames ? '' : 'reasonCode')
+    ..aOS(5, _omitFieldNames ? '' : 'description')
+    ..aInt64(6, _omitFieldNames ? '' : 'timestamp')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ExecutionRejection clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ExecutionRejection copyWith(void Function(ExecutionRejection) updates) =>
+      super.copyWith((message) => updates(message as ExecutionRejection))
+          as ExecutionRejection;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ExecutionRejection create() => ExecutionRejection._();
+  @$core.override
+  ExecutionRejection createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ExecutionRejection getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ExecutionRejection>(create);
+  static ExecutionRejection? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get symbol => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set symbol($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSymbol() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSymbol() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get originalSide => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set originalSide($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasOriginalSide() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearOriginalSide() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.double get intendedQuantity => $_getN(2);
+  @$pb.TagNumber(3)
+  set intendedQuantity($core.double value) => $_setDouble(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasIntendedQuantity() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearIntendedQuantity() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get reasonCode => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set reasonCode($core.String value) => $_setString(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasReasonCode() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearReasonCode() => $_clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get description => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set description($core.String value) => $_setString(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasDescription() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearDescription() => $_clearField(5);
+
+  @$pb.TagNumber(6)
+  $fixnum.Int64 get timestamp => $_getI64(5);
+  @$pb.TagNumber(6)
+  set timestamp($fixnum.Int64 value) => $_setInt64(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasTimestamp() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearTimestamp() => $_clearField(6);
 }
 
 const $core.bool _omitFieldNames =

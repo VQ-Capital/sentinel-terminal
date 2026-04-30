@@ -33,10 +33,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       appBar: TerminalAppBar(isDefensiveMode: metrics.isDefensiveMode),
       body: Column(
         children: [
-          const MarketTickerTape(), 
+          const MarketTickerTape(),
           Expanded(
-            child: isDesktop 
-                ? _buildInstitutionalDesktopLayout(metrics) 
+            child: isDesktop
+                ? _buildInstitutionalDesktopLayout(metrics)
                 : _buildMobileLayout(metrics),
           ),
         ],
@@ -65,7 +65,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: Column(
                     children: [
                       Expanded(
-                        flex: 40, 
+                        flex: 40,
                         child: PnlChartWidget(
                           balanceHistory: metrics.balanceHistory,
                           equityHistory: metrics.equityHistory,
@@ -74,26 +74,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                       const SizedBox(height: 12),
                       Expanded(
-                        flex: 60, 
+                        flex: 60,
                         child: OpenPositionsPanel(
-                          positions: metrics.positions, 
+                          positions: metrics.positions,
                           avgPrices: metrics.avgPrices,
                         ),
                       ),
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(width: 12),
-                
+
                 // 2. ORTA SÜTUN: LIVE NEURAL GALAXY 🌌
-                const Expanded(
-                  flex: 30,
-                  child: NeuralGalaxyPanel(), 
-                ),
-                
+                const Expanded(flex: 30, child: NeuralGalaxyPanel()),
+
                 const SizedBox(width: 12),
-                
+
                 // 3. SAĞ SÜTUN: Radar & Loglar
                 Expanded(
                   flex: 35,
@@ -104,15 +101,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       const SizedBox(height: 12),
                       // Latency & Logs
                       Expanded(
-                        flex: 65, 
+                        flex: 65,
                         child: Column(
                           children: [
-                            Expanded(flex: 30, child: LatencyChartWidget(
-                              latencies: metrics.recentLatencies, 
-                              avgLatency: metrics.avgLatency,
-                            )),
+                            Expanded(
+                              flex: 30,
+                              child: LatencyChartWidget(
+                                latencies: metrics.recentLatencies,
+                                avgLatency: metrics.avgLatency,
+                              ),
+                            ),
                             const SizedBox(height: 12),
-                            const Expanded(flex: 70, child: TradeLogPanel(isDesktop: true)),
+                            const Expanded(
+                              flex: 70,
+                              child: TradeLogPanel(isDesktop: true),
+                            ),
                           ],
                         ),
                       ),
@@ -149,16 +152,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ListView(
           padding: const EdgeInsets.all(12),
           children: [
-            SizedBox(height: 250, child: PnlChartWidget(
-              balanceHistory: metrics.balanceHistory,
-              equityHistory: metrics.equityHistory,
-              currentPnl: metrics.displayRealizedPnL
-            )),
+            SizedBox(
+              height: 250,
+              child: PnlChartWidget(
+                balanceHistory: metrics.balanceHistory,
+                equityHistory: metrics.equityHistory,
+                currentPnl: metrics.displayRealizedPnL,
+              ),
+            ),
             const SizedBox(height: 12),
-            SizedBox(height: 500, child: OpenPositionsPanel(
-              positions: metrics.positions, 
-              avgPrices: metrics.avgPrices
-            )),
+            SizedBox(
+              height: 500,
+              child: OpenPositionsPanel(
+                positions: metrics.positions,
+                avgPrices: metrics.avgPrices,
+              ),
+            ),
           ],
         ),
         // SİSTEM (🔥 CERRAHİ: Const hataları düzeltildi)
@@ -167,12 +176,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           children: [
             SlaHeatmapPanel(), // const kaldırıldı
             const SizedBox(height: 12),
-            SizedBox(height: 200, child: LatencyChartWidget(
-              latencies: metrics.recentLatencies, 
-              avgLatency: metrics.avgLatency
-            )),
+            SizedBox(
+              height: 200,
+              child: LatencyChartWidget(
+                latencies: metrics.recentLatencies,
+                avgLatency: metrics.avgLatency,
+              ),
+            ),
             const SizedBox(height: 12),
-            SizedBox(height: 600, child: TradeLogPanel(isDesktop: false)), // const kaldırıldı
+            SizedBox(
+              height: 600,
+              child: TradeLogPanel(isDesktop: false),
+            ), // const kaldırıldı
           ],
         ),
       ],
@@ -188,7 +203,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       onTap: (index) => setState(() => _mobileSelectedIndex = index),
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.radar), label: 'Neural'),
-        BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet), label: 'Cüzdan'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.account_balance_wallet),
+          label: 'Cüzdan',
+        ),
         BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Loglar'),
       ],
     );

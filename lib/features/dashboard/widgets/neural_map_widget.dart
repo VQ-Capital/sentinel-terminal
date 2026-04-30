@@ -17,7 +17,10 @@ class NeuralGalaxyPanel extends ConsumerWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF0D0D0F),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blueAccent.withOpacity(0.3), width: 1.5),
+        border: Border.all(
+          color: Colors.blueAccent.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -32,10 +35,20 @@ class NeuralGalaxyPanel extends ConsumerWidget {
                   children: const [
                     FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Text("🌌 ONNX 12D DECISION MANIFOLD", 
-                        style: TextStyle(color: Colors.blueAccent, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                      child: Text(
+                        "🌌 ONNX 12D DECISION MANIFOLD",
+                        style: TextStyle(
+                          color: Colors.blueAccent,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
                     ),
-                    Text("Vektörel Olasılık Haritası", style: TextStyle(color: Colors.white24, fontSize: 9)),
+                    Text(
+                      "Vektörel Olasılık Haritası",
+                      style: TextStyle(color: Colors.white24, fontSize: 9),
+                    ),
                   ],
                 ),
               ),
@@ -53,15 +66,18 @@ class NeuralGalaxyPanel extends ConsumerWidget {
                       size: Size(constraints.maxWidth, constraints.maxHeight),
                       painter: RadarBackgroundPainter(),
                     ),
-                    
+
                     ...vectors.entries.map((entry) {
                       final symbol = entry.key;
                       final vec = entry.value;
-                      
+
                       final double centerX = constraints.maxWidth / 2;
                       final double centerY = constraints.maxHeight / 2;
-                      final double x = (vec.priceVelocity * (centerX / 3)).clamp(0.0, constraints.maxWidth);
-                      final double y = (centerY - (vec.volumeImbalance * (centerY / 3))).clamp(0.0, constraints.maxHeight);
+                      final double x = (vec.priceVelocity * (centerX / 3))
+                          .clamp(0.0, constraints.maxWidth);
+                      final double y =
+                          (centerY - (vec.volumeImbalance * (centerY / 3)))
+                              .clamp(0.0, constraints.maxHeight);
 
                       _trailMap.putIfAbsent(symbol, () => []);
                       final trail = _trailMap[symbol]!;
@@ -78,9 +94,12 @@ class NeuralGalaxyPanel extends ConsumerWidget {
                               left: pos.dx - 4,
                               top: pos.dy - 4,
                               child: Container(
-                                width: 8, height: 8,
+                                width: 8,
+                                height: 8,
                                 decoration: BoxDecoration(
-                                  color: _getColorForSymbol(symbol).withOpacity(opacity),
+                                  color: _getColorForSymbol(
+                                    symbol,
+                                  ).withValues(alpha: opacity),
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -91,11 +110,14 @@ class NeuralGalaxyPanel extends ConsumerWidget {
                             curve: Curves.easeOutCubic,
                             left: x - 10,
                             top: y - 10,
-                            child: _buildInstitutionalPointer(symbol, _getColorForSymbol(symbol)),
+                            child: _buildInstitutionalPointer(
+                              symbol,
+                              _getColorForSymbol(symbol),
+                            ),
                           ),
                         ],
                       );
-                    }).toList(),
+                    }),
                   ],
                 );
               },
@@ -110,21 +132,46 @@ class NeuralGalaxyPanel extends ConsumerWidget {
     return Column(
       children: [
         Container(
-          width: 20, height: 20,
+          width: 20,
+          height: 20,
           decoration: BoxDecoration(
-            color: color, shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: color.withOpacity(0.6), blurRadius: 15, spreadRadius: 2)],
+            color: color,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.6),
+                blurRadius: 15,
+                spreadRadius: 2,
+              ),
+            ],
             border: Border.all(color: Colors.white, width: 2),
           ),
           child: Center(
-            child: Text(symbol[0], style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+            child: Text(
+              symbol[0],
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 4),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-          decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(4)),
-          child: Text(symbol.replaceAll("USDT", ""), style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.bold)),
+          decoration: BoxDecoration(
+            color: Colors.black54,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            symbol.replaceAll("USDT", ""),
+            style: TextStyle(
+              color: color,
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ],
     );
@@ -141,9 +188,23 @@ class NeuralGalaxyPanel extends ConsumerWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.greenAccent, shape: BoxShape.circle)),
+        Container(
+          width: 6,
+          height: 6,
+          decoration: const BoxDecoration(
+            color: Colors.greenAccent,
+            shape: BoxShape.circle,
+          ),
+        ),
         const SizedBox(width: 4),
-        const Text("CUDA", style: TextStyle(color: Colors.greenAccent, fontSize: 8, fontWeight: FontWeight.bold)),
+        const Text(
+          "CUDA",
+          style: TextStyle(
+            color: Colors.greenAccent,
+            fontSize: 8,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ],
     );
   }
@@ -153,22 +214,60 @@ class RadarBackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final paintLine = Paint()..color = Colors.white.withOpacity(0.05)..strokeWidth = 1;
+    final paintLine = Paint()
+      ..color = Colors.white.withValues(alpha: 0.05)
+      ..strokeWidth = 1;
 
-    canvas.drawLine(Offset(0, center.dy), Offset(size.width, center.dy), paintLine);
-    canvas.drawLine(Offset(center.dx, 0), Offset(center.dx, size.height), paintLine);
+    canvas.drawLine(
+      Offset(0, center.dy),
+      Offset(size.width, center.dy),
+      paintLine,
+    );
+    canvas.drawLine(
+      Offset(center.dx, 0),
+      Offset(center.dx, size.height),
+      paintLine,
+    );
 
-    _drawZoneText(canvas, "Q1: POSITIVE DRIFT", Offset(size.width - 100, 10), Colors.greenAccent.withOpacity(0.3));
-    _drawZoneText(canvas, "Q3: NEGATIVE DRIFT", Offset(10, size.height - 20), Colors.redAccent.withOpacity(0.3));
-    _drawZoneText(canvas, "Q4: MEAN REV (BID)", Offset(size.width - 100, size.height - 20), Colors.blueAccent.withOpacity(0.3));
-    _drawZoneText(canvas, "Q2: MEAN REV (ASK)", Offset(10, 10), Colors.orangeAccent.withOpacity(0.3));
-    
+    _drawZoneText(
+      canvas,
+      "Q1: POSITIVE DRIFT",
+      Offset(size.width - 100, 10),
+      Colors.greenAccent.withValues(alpha: 0.3),
+    );
+    _drawZoneText(
+      canvas,
+      "Q3: NEGATIVE DRIFT",
+      Offset(10, size.height - 20),
+      Colors.redAccent.withValues(alpha: 0.3),
+    );
+    _drawZoneText(
+      canvas,
+      "Q4: MEAN REV (BID)",
+      Offset(size.width - 100, size.height - 20),
+      Colors.blueAccent.withValues(alpha: 0.3),
+    );
+    _drawZoneText(
+      canvas,
+      "Q2: MEAN REV (ASK)",
+      Offset(10, 10),
+      Colors.orangeAccent.withValues(alpha: 0.3),
+    );
+
     canvas.drawCircle(center, 4, Paint()..color = Colors.white10);
   }
 
   void _drawZoneText(Canvas canvas, String text, Offset offset, Color color) {
     final tp = TextPainter(
-      text: TextSpan(text: text, style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: color,
+          fontSize: 8,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.5,
+        ),
+      ),
       textDirection: TextDirection.ltr,
     );
     tp.layout();

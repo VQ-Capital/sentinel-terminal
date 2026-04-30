@@ -73,6 +73,15 @@ const StreamBundle$json = {
       '9': 0,
       '10': 'vector'
     },
+    {
+      '1': 'rejection',
+      '3': 7,
+      '4': 1,
+      '5': 11,
+      '6': '.sentinel.execution.v1.ExecutionRejection',
+      '9': 0,
+      '10': 'rejection'
+    },
   ],
   '8': [
     {'1': 'message'},
@@ -87,8 +96,9 @@ final $typed_data.Uint8List streamBundleDescriptor = $convert.base64Decode(
     'V0aW9uLnYxLlRyYWRlU2lnbmFsSABSBnNpZ25hbBI7Cgdjb21tYW5kGAQgASgLMh8uc2VudGlu'
     'ZWwuYXBpLnYxLkNvbnRyb2xDb21tYW5kSABSB2NvbW1hbmQSPAoGZXF1aXR5GAUgASgLMiIuc2'
     'VudGluZWwud2FsbGV0LnYxLkVxdWl0eVNuYXBzaG90SABSBmVxdWl0eRI/CgZ2ZWN0b3IYBiAB'
-    'KAsyJS5zZW50aW5lbC5tYXJrZXQudjEuTWFya2V0U3RhdGVWZWN0b3JIAFIGdmVjdG9yQgkKB2'
-    '1lc3NhZ2U=');
+    'KAsyJS5zZW50aW5lbC5tYXJrZXQudjEuTWFya2V0U3RhdGVWZWN0b3JIAFIGdmVjdG9yEkkKCX'
+    'JlamVjdGlvbhgHIAEoCzIpLnNlbnRpbmVsLmV4ZWN1dGlvbi52MS5FeGVjdXRpb25SZWplY3Rp'
+    'b25IAFIJcmVqZWN0aW9uQgkKB21lc3NhZ2U=');
 
 @$core.Deprecated('Use controlCommandDescriptor instead')
 const ControlCommand$json = {
@@ -113,12 +123,13 @@ const ControlCommand_CommandType$json = {
     {'1': 'COMMAND_TYPE_UNSPECIFIED', '2': 0},
     {'1': 'COMMAND_TYPE_STOP_ALL', '2': 1},
     {'1': 'COMMAND_TYPE_START_ALL', '2': 2},
+    {'1': 'COMMAND_TYPE_EXTINCTION_PROTOCOL', '2': 3},
   ],
 };
 
 /// Descriptor for `ControlCommand`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List controlCommandDescriptor = $convert.base64Decode(
     'Cg5Db250cm9sQ29tbWFuZBI/CgR0eXBlGAEgASgOMisuc2VudGluZWwuYXBpLnYxLkNvbnRyb2'
-    'xDb21tYW5kLkNvbW1hbmRUeXBlUgR0eXBlImIKC0NvbW1hbmRUeXBlEhwKGENPTU1BTkRfVFlQ'
-    'RV9VTlNQRUNJRklFRBAAEhkKFUNPTU1BTkRfVFlQRV9TVE9QX0FMTBABEhoKFkNPTU1BTkRfVF'
-    'lQRV9TVEFSVF9BTEwQAg==');
+    'xDb21tYW5kLkNvbW1hbmRUeXBlUgR0eXBlIogBCgtDb21tYW5kVHlwZRIcChhDT01NQU5EX1RZ'
+    'UEVfVU5TUEVDSUZJRUQQABIZChVDT01NQU5EX1RZUEVfU1RPUF9BTEwQARIaChZDT01NQU5EX1'
+    'RZUEVfU1RBUlRfQUxMEAISJAogQ09NTUFORF9UWVBFX0VYVElOQ1RJT05fUFJPVE9DT0wQAw==');

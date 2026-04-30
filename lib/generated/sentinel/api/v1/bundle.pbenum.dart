@@ -24,16 +24,20 @@ class ControlCommand_CommandType extends $pb.ProtobufEnum {
   static const ControlCommand_CommandType COMMAND_TYPE_START_ALL =
       ControlCommand_CommandType._(
           2, _omitEnumNames ? '' : 'COMMAND_TYPE_START_ALL');
+  static const ControlCommand_CommandType COMMAND_TYPE_EXTINCTION_PROTOCOL =
+      ControlCommand_CommandType._(
+          3, _omitEnumNames ? '' : 'COMMAND_TYPE_EXTINCTION_PROTOCOL');
 
   static const $core.List<ControlCommand_CommandType> values =
       <ControlCommand_CommandType>[
     COMMAND_TYPE_UNSPECIFIED,
     COMMAND_TYPE_STOP_ALL,
     COMMAND_TYPE_START_ALL,
+    COMMAND_TYPE_EXTINCTION_PROTOCOL,
   ];
 
   static final $core.List<ControlCommand_CommandType?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 2);
+      $pb.ProtobufEnum.$_initByValueList(values, 3);
   static ControlCommand_CommandType? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 

@@ -30,6 +30,7 @@ enum StreamBundle_Message {
   command,
   equity,
   vector,
+  rejection,
   notSet
 }
 
@@ -41,6 +42,7 @@ class StreamBundle extends $pb.GeneratedMessage {
     ControlCommand? command,
     $2.EquitySnapshot? equity,
     $0.MarketStateVector? vector,
+    $1.ExecutionRejection? rejection,
   }) {
     final result = create();
     if (trade != null) result.trade = trade;
@@ -49,6 +51,7 @@ class StreamBundle extends $pb.GeneratedMessage {
     if (command != null) result.command = command;
     if (equity != null) result.equity = equity;
     if (vector != null) result.vector = vector;
+    if (rejection != null) result.rejection = rejection;
     return result;
   }
 
@@ -69,6 +72,7 @@ class StreamBundle extends $pb.GeneratedMessage {
     4: StreamBundle_Message.command,
     5: StreamBundle_Message.equity,
     6: StreamBundle_Message.vector,
+    7: StreamBundle_Message.rejection,
     0: StreamBundle_Message.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
@@ -76,7 +80,7 @@ class StreamBundle extends $pb.GeneratedMessage {
       package:
           const $pb.PackageName(_omitMessageNames ? '' : 'sentinel.api.v1'),
       createEmptyInstance: create)
-    ..oo(0, [1, 2, 3, 4, 5, 6])
+    ..oo(0, [1, 2, 3, 4, 5, 6, 7])
     ..aOM<$0.AggTrade>(1, _omitFieldNames ? '' : 'trade',
         subBuilder: $0.AggTrade.create)
     ..aOM<$1.ExecutionReport>(2, _omitFieldNames ? '' : 'report',
@@ -89,6 +93,8 @@ class StreamBundle extends $pb.GeneratedMessage {
         subBuilder: $2.EquitySnapshot.create)
     ..aOM<$0.MarketStateVector>(6, _omitFieldNames ? '' : 'vector',
         subBuilder: $0.MarketStateVector.create)
+    ..aOM<$1.ExecutionRejection>(7, _omitFieldNames ? '' : 'rejection',
+        subBuilder: $1.ExecutionRejection.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -116,6 +122,7 @@ class StreamBundle extends $pb.GeneratedMessage {
   @$pb.TagNumber(4)
   @$pb.TagNumber(5)
   @$pb.TagNumber(6)
+  @$pb.TagNumber(7)
   StreamBundle_Message whichMessage() =>
       _StreamBundle_MessageByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(1)
@@ -124,6 +131,7 @@ class StreamBundle extends $pb.GeneratedMessage {
   @$pb.TagNumber(4)
   @$pb.TagNumber(5)
   @$pb.TagNumber(6)
+  @$pb.TagNumber(7)
   void clearMessage() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -191,6 +199,17 @@ class StreamBundle extends $pb.GeneratedMessage {
   void clearVector() => $_clearField(6);
   @$pb.TagNumber(6)
   $0.MarketStateVector ensureVector() => $_ensure(5);
+
+  @$pb.TagNumber(7)
+  $1.ExecutionRejection get rejection => $_getN(6);
+  @$pb.TagNumber(7)
+  set rejection($1.ExecutionRejection value) => $_setField(7, value);
+  @$pb.TagNumber(7)
+  $core.bool hasRejection() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearRejection() => $_clearField(7);
+  @$pb.TagNumber(7)
+  $1.ExecutionRejection ensureRejection() => $_ensure(6);
 }
 
 class ControlCommand extends $pb.GeneratedMessage {
